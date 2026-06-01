@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, Response
 from flask_mail import Message
 from extensions import db, mail
 from dotenv import load_dotenv
@@ -384,6 +384,84 @@ def contact():
 def about():
     return render_template("about.html")
 
+
+# ============================
+# SEO — SITEMAP & ROBOTS
+# ============================
+@app.route("/sitemap.xml")
+def sitemap():
+    base = os.getenv("SITE_URL", "https://nexasolutions.de").rstrip("/")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+    static_pages = [
+        {"loc": base + "/",                                 "priority": "1.0", "changefreq": "weekly"},
+        {"loc": base + "/services",                         "priority": "0.9", "changefreq": "monthly"},
+        {"loc": base + "/services/web-development",         "priority": "0.85","changefreq": "monthly"},
+        {"loc": base + "/services/app-development",         "priority": "0.85","changefreq": "monthly"},
+        {"loc": base + "/services/performance-marketing",   "priority": "0.85","changefreq": "monthly"},
+        {"loc": base + "/webdesign-agency-germany",         "priority": "0.8", "changefreq": "monthly"},
+        {"loc": base + "/work",                             "priority": "0.7", "changefreq": "monthly"},
+        {"loc": base + "/blog",                             "priority": "0.9", "changefreq": "daily"},
+        {"loc": base + "/about",                            "priority": "0.6", "changefreq": "yearly"},
+        {"loc": base + "/contact",                          "priority": "0.6", "changefreq": "yearly"},
+    ]
+
+    try:
+        posts = BlogPost.query.filter_by(is_published=True).order_by(BlogPost.published_at.desc()).all()
+    except Exception:
+        posts = []
+
+    blog_pages = [
+        {
+            "loc": base + "/blog/" + p.slug,
+            "priority": "0.75",
+            "changefreq": "monthly",
+            "lastmod": p.updated_at.strftime("%Y-%m-%d") if p.updated_at else today,
+        }
+        for p in posts
+    ]
+
+    urls = ""
+    for page in static_pages:
+        urls += (
+            f"  <url>\n"
+            f"    <loc>{page['loc']}</loc>\n"
+            f"    <lastmod>{today}</lastmod>\n"
+            f"    <changefreq>{page['changefreq']}</changefreq>\n"
+            f"    <priority>{page['priority']}</priority>\n"
+            f"  </url>\n"
+        )
+    for page in blog_pages:
+        urls += (
+            f"  <url>\n"
+            f"    <loc>{page['loc']}</loc>\n"
+            f"    <lastmod>{page['lastmod']}</lastmod>\n"
+            f"    <changefreq>{page['changefreq']}</changefreq>\n"
+            f"    <priority>{page['priority']}</priority>\n"
+            f"  </url>\n"
+        )
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + urls +
+        '</urlset>'
+    )
+    return Response(xml, mimetype="application/xml")
+
+
+@app.route("/robots.txt")
+def robots():
+    base = os.getenv("SITE_URL", "https://nexasolutions.de").rstrip("/")
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin/\n"
+        "Disallow: /converter\n"
+        "\n"
+        f"Sitemap: {base}/sitemap.xml\n"
+    )
+    return Response(content, mimetype="text/plain")
 
 
 if __name__ == "__main__":

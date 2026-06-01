@@ -69,127 +69,123 @@
 <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
 <script>
-(function () {
+document.addEventListener("DOMContentLoaded", function () {
+
     var container   = document.getElementById("editor-container");
-    var hiddenInput = document.getElementById("hidden-content");
     var form        = document.getElementById("blog-form");
     var wordCountEl = document.getElementById("word-count");
     var charCountEl = document.getElementById("char-count");
 
-    if (!container || !hiddenInput || !form) return;
+    // Existing content for edit mode (read before Quill takes over the DOM)
+    var existingContent = document.getElementById("hidden-content")
+                          ? document.getElementById("hidden-content").value
+                          : "";
 
-    // ── Quill failed to load from CDN — show plain textarea fallback ──
+    if (!container || !form) return;
+
+    // ── Quill CDN failed — plain textarea fallback ──
     if (typeof Quill === "undefined") {
         var ta = document.createElement("textarea");
-        ta.name  = "content";
-        ta.id    = "content-fallback";
-        ta.rows  = 18;
-        ta.value = hiddenInput.value;
+        ta.name = "content";
+        ta.rows = 18;
+        ta.value = existingContent;
         ta.style.cssText = "width:100%;padding:12px;font-size:0.95rem;border:1px solid #ddd;border-radius:8px;font-family:inherit;resize:vertical;";
         container.parentNode.insertBefore(ta, container);
         container.style.display = "none";
-        hiddenInput.name = "";          // disable the original hidden field
-        ta.addEventListener("input", function () {
-            hiddenInput.value = ta.value;
-        });
-        console.warn("Quill did not load — using plain textarea fallback.");
+        // disable the WTForms hidden field so it doesn't shadow the textarea
+        var old = document.getElementById("hidden-content");
+        if (old) old.removeAttribute("name");
         return;
     }
 
-    // ── Normal Quill initialisation ──
-    var quill;
-    try {
-        quill = new Quill("#editor-container", {
-            theme: "snow",
-            placeholder: "Write your blog content here…",
-            modules: {
-                toolbar: {
-                    container: [
-                        [{ header: [1, 2, 3, false] }],
-                        [{ font: [] }],
-                        [{ size: ["small", false, "large", "huge"] }],
-                        ["bold", "italic", "underline", "strike"],
-                        [{ color: [] }, { background: [] }],
-                        [{ script: "sub" }, { script: "super" }],
-                        ["blockquote", "code-block"],
-                        [{ list: "ordered" }, { list: "bullet" }],
-                        [{ indent: "-1" }, { indent: "+1" }],
-                        [{ align: [] }],
-                        ["link", "image", "video"],
-                        ["clean"]
-                    ],
-                    handlers: {
-                        image: function () {
-                            var input = document.createElement("input");
-                            input.setAttribute("type", "file");
-                            input.setAttribute("accept", "image/*");
-                            input.click();
-                            input.onchange = function () {
-                                var file = input.files[0];
-                                if (!file) return;
-                                var formData = new FormData();
-                                formData.append("image", file);
-                                fetch("{{ url_for('admin.upload_image') }}", {
-                                    method: "POST",
-                                    body: formData
-                                })
-                                .then(function (res) { return res.json(); })
-                                .then(function (data) {
-                                    if (data.url) {
+    // ── Initialise Quill ──
+    var quill = new Quill("#editor-container", {
+        theme: "snow",
+        placeholder: "Write your blog content here…",
+        modules: {
+            toolbar: {
+                container: [
+                    [{ header: [1, 2, 3, false] }],
+                    [{ font: [] }],
+                    [{ size: ["small", false, "large", "huge"] }],
+                    ["bold", "italic", "underline", "strike"],
+                    [{ color: [] }, { background: [] }],
+                    [{ script: "sub" }, { script: "super" }],
+                    ["blockquote", "code-block"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    [{ indent: "-1" }, { indent: "+1" }],
+                    [{ align: [] }],
+                    ["link", "image", "video"],
+                    ["clean"]
+                ],
+                handlers: {
+                    image: function () {
+                        var fileInput = document.createElement("input");
+                        fileInput.setAttribute("type", "file");
+                        fileInput.setAttribute("accept", "image/*");
+                        fileInput.click();
+                        fileInput.onchange = function () {
+                            var file = fileInput.files[0];
+                            if (!file) return;
+                            var fd = new FormData();
+                            fd.append("image", file);
+                            fetch("{{ url_for('admin.upload_image') }}", { method: "POST", body: fd })
+                                .then(function (r) { return r.json(); })
+                                .then(function (d) {
+                                    if (d.url) {
                                         var range = quill.getSelection(true);
-                                        quill.insertEmbed(range.index, "image", data.url);
+                                        quill.insertEmbed(range.index, "image", d.url);
                                         quill.setSelection(range.index + 1);
                                     } else {
-                                        alert("Image upload failed: " + (data.error || "Unknown error"));
+                                        alert("Image upload failed: " + (d.error || "Unknown error"));
                                     }
                                 })
-                                .catch(function (err) {
-                                    alert("Image upload failed: " + err.message);
-                                });
-                            };
-                        }
+                                .catch(function (err) { alert("Image upload error: " + err.message); });
+                        };
                     }
                 }
             }
-        });
-    } catch (err) {
-        console.error("Quill init failed:", err);
-        return;
-    }
+        }
+    });
 
     // Load existing content (edit mode)
-    if (hiddenInput.value) {
-        quill.root.innerHTML = hiddenInput.value;
+    if (existingContent) {
+        quill.root.innerHTML = existingContent;
     }
 
-    function syncContent() {
-        hiddenInput.value = quill.root.innerHTML;
-    }
-
+    // Live word / char count
     function updateCounts() {
-        var text  = quill.getText().trim();
+        var text = quill.getText().trim();
         var words = text.length > 0 ? text.split(/\s+/).length : 0;
         if (wordCountEl) wordCountEl.textContent = words + " word" + (words !== 1 ? "s" : "");
         if (charCountEl) charCountEl.textContent = text.length + " character" + (text.length !== 1 ? "s" : "");
     }
-
-    // Sync on every keystroke
-    quill.on("text-change", function () {
-        syncContent();
-        updateCounts();
-    });
-
+    quill.on("text-change", updateCounts);
     updateCounts();
 
-    // Sync + validate on submit
+    // ── On submit: inject a FRESH hidden input with the Quill HTML ──
+    // (more reliable than updating an existing input's value property)
     form.addEventListener("submit", function (e) {
-        syncContent();
+        var html = quill.root.innerHTML;
         var text = quill.getText().trim();
-        if (!text || text.length === 0) {
+
+        if (!text) {
             alert("Blog content cannot be empty. Please write something before saving.");
             e.preventDefault();
-            return false;
+            return;
         }
+
+        // Remove every existing 'content' field so there's no duplicate
+        form.querySelectorAll('[name="content"]').forEach(function (el) {
+            el.parentNode.removeChild(el);
+        });
+
+        // Append a fresh hidden input that the browser WILL include in the POST
+        var inp = document.createElement("input");
+        inp.type  = "hidden";
+        inp.name  = "content";
+        inp.value = html;
+        form.appendChild(inp);
     });
 
     // ── Auto-generate slug from title ──
@@ -200,7 +196,6 @@
     if (slugInput) {
         slugInput.addEventListener("input", function () { slugEdited = true; });
     }
-
     if (titleInput && slugInput) {
         titleInput.addEventListener("input", function () {
             if (!slugEdited) {
@@ -213,6 +208,7 @@
             }
         });
     }
-}());
+
+});
 </script>
 {% endblock %}

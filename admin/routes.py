@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required
 from models import BlogPost, Category, upload_blog_image
 from .forms import BlogForm
 from .utils import generate_unique_slug
+import re
 import os
 from extensions import db
 
@@ -69,10 +70,9 @@ def create_blog():
     ]
 
     if form.validate_on_submit():
-        # Read content directly from request so it's never lost via WTForms binding
         content = request.form.get('content', '').strip()
-        # Treat Quill's empty-editor sentinel as no content
-        if content in ('', '<p><br></p>', '<p></p>'):
+        # Strip all HTML tags and check there is actual visible text
+        if not re.sub(r'<[^>]+>', '', content).strip():
             flash("Blog content cannot be empty.", "error")
             return render_template("admin/blog_form.html", form=form, is_edit=False)
 
@@ -125,7 +125,7 @@ def edit_blog(blog_id):
 
     if form.validate_on_submit():
         content = request.form.get('content', '').strip()
-        if content in ('', '<p><br></p>', '<p></p>'):
+        if not re.sub(r'<[^>]+>', '', content).strip():
             flash("Blog content cannot be empty.", "error")
             return render_template("admin/blog_form.html", form=form, is_edit=True)
 
