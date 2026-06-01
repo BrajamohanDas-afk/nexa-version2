@@ -352,28 +352,27 @@ def contact():
             return redirect(url_for("contact"))
 
         try:
+            recipient = os.getenv("CONTACT_EMAIL", app.config["MAIL_USERNAME"])
             msg = Message(
                 subject=f"Contact Form: {data['subject']}",
                 sender=app.config["MAIL_USERNAME"],
-                recipients=["contact@nexa-solutions.in"],
+                recipients=[recipient],
                 reply_to=data["email"],
-                body=f"""
-                Name: {data['name']}
-                Email: {data['email']}
-                Phone: {data['phone']}
-                Subject: {data['subject']}
-
-                Message:
-                {data['message']}
-
-                Sent from: {request.host_url}contact
-                Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                """,
+                body=(
+                    f"Name:    {data['name']}\n"
+                    f"Email:   {data['email']}\n"
+                    f"Phone:   {data['phone']}\n"
+                    f"Subject: {data['subject']}\n\n"
+                    f"Message:\n{data['message']}\n\n"
+                    f"Sent from: {request.host_url}contact\n"
+                    f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                ),
             )
             mail.send(msg)
-            flash("Your message has been sent successfully.", "success")
-        except Exception:
-            flash("Your message has been received.", "success")
+            flash("Your message has been sent successfully. We'll get back to you soon!", "success")
+        except Exception as e:
+            app.logger.error("Contact form mail error: %s", e)
+            flash("Sorry, there was a problem sending your message. Please try again or email us directly.", "error")
 
         return redirect(url_for("contact"))
 
