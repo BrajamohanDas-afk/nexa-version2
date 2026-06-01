@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image to WebP Converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface-2: #1e1e1e;
+      --border: #2a2a2a;
+      --accent: #7c5cfc;
+      --accent-hover: #6a4de8;
+      --accent-soft: rgba(124, 92, 252, 0.12);
+      --green: #22c55e;
+      --green-soft: rgba(34,197,94,0.10);
+      --yellow: #f59e0b;
+      --yellow-soft: rgba(245,158,11,0.10);
+      --red: #ef4444;
+      --text: #f0f0f0;
+      --muted: #777;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    .page-header { text-align: center; margin-bottom: 36px; max-width: 560px; }
+    .page-header h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 700; letter-spacing: -0.5px; margin-bottom: 10px; }
+    .page-header h1 span { color: var(--accent); }
+    .page-header p { color: var(--muted); font-size: 0.92rem; line-height: 1.65; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 52px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #drop-zone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+    #drop-zone svg { color: var(--accent); margin-bottom: 14px; }
+    #drop-zone h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
+    #drop-zone p  { color: var(--muted); font-size: 0.83rem; margin-bottom: 18px; }
+    #file-input   { display: none; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 22px; border-radius: 8px;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none;
+      transition: background 0.18s, opacity 0.18s, transform 0.1s;
+      font-family: inherit; white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Controls ── */
+    #controls { display: none; flex-direction: column; gap: 14px; margin-top: 22px; }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      gap: 4px;
+      width: fit-content;
+    }
+    .mode-btn {
+      padding: 8px 18px; border-radius: 7px; border: none;
+      font-size: 0.83rem; font-weight: 600; cursor: pointer;
+      font-family: inherit; color: var(--muted);
+      background: transparent; transition: all 0.15s;
+    }
+    .mode-btn.active { background: var(--accent); color: #fff; }
+    .mode-btn:not(.active):hover { color: var(--text); }
+
+    .controls-row {
+      display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end;
+    }
+
+    .ctrl-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 155px; }
+
+    .ctrl-label {
+      font-size: 0.76rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    /* Quality pills */
+    .preset-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .preset-pill {
+      padding: 7px 14px; border-radius: 99px;
+      border: 1.5px solid var(--border); background: var(--surface-2);
+      color: var(--muted); font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .preset-pill:hover { border-color: var(--accent); color: var(--text); }
+    .preset-pill.active { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+    .preset-pill:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+    /* Target size input */
+    .target-wrap {
+      display: flex; align-items: center; gap: 0;
+      background: var(--surface-2); border: 1.5px solid var(--border);
+      border-radius: 8px; overflow: hidden; transition: border-color 0.15s;
+    }
+    .target-wrap:focus-within { border-color: var(--accent); }
+    #target-kb {
+      background: transparent; border: none; color: var(--text);
+      font-size: 1rem; font-weight: 700; font-family: inherit;
+      padding: 9px 6px 9px 14px; width: 80px; outline: none;
+    }
+    #target-kb::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .target-unit {
+      padding: 9px 14px 9px 4px; font-size: 0.85rem;
+      font-weight: 600; color: var(--muted);
+    }
+
+    /* Max width select */
+    .ctrl-select {
+      background: var(--surface-2); border: 1.5px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 9px 34px 9px 12px;
+      font-size: 0.88rem; font-family: inherit; cursor: pointer;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23777' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      transition: border-color 0.15s;
+    }
+    .ctrl-select:hover, .ctrl-select:focus { border-color: var(--accent); outline: none; }
+
+    /* Info bar */
+    .info-bar {
+      display: flex; align-items: flex-start; gap: 9px;
+      padding: 11px 14px; border-radius: 8px;
+      font-size: 0.8rem; line-height: 1.55;
+    }
+    .info-bar svg { flex-shrink: 0; margin-top: 1px; }
+    .info-bar.green { background: var(--green-soft); border: 1px solid rgba(34,197,94,0.2); color: #86efac; }
+    .info-bar.yellow { background: var(--yellow-soft); border: 1px solid rgba(245,158,11,0.2); color: #fcd34d; }
+
+    .action-btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* ── Progress ── */
+    #progress-wrap { display: none; margin-top: 18px; }
+    .progress-bar-bg { background: var(--surface-2); border-radius: 99px; height: 5px; overflow: hidden; }
+    #progress-bar { height: 100%; background: var(--accent); border-radius: 99px; width: 0%; transition: width 0.25s; }
+    #progress-label { font-size: 0.78rem; color: var(--muted); margin-top: 7px; text-align: center; }
+
+    /* ── Image grid ── */
+    #image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-top: 22px; }
+
+    .img-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+    .img-card.over-target { border-color: rgba(245,158,11,0.5); }
+
+    .img-preview { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: #111; }
+
+    .img-info { padding: 10px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+    .img-name { font-size: 0.78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .img-dim  { font-size: 0.7rem; color: var(--muted); }
+    .img-sizes { font-size: 0.72rem; color: var(--muted); }
+    .img-sizes .after { color: var(--green); }
+    .img-sizes .over  { color: var(--yellow); }
+
+    .img-status {
+      font-size: 0.7rem; font-weight: 600; padding: 2px 8px;
+      border-radius: 20px; display: inline-block; width: fit-content; margin-bottom: 2px;
+    }
+    .status-pending { background: rgba(136,136,136,0.12); color: var(--muted); }
+    .status-done    { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .status-warn    { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .status-error   { background: rgba(239,68,68,0.15);  color: var(--red); }
+
+    .img-actions { padding: 0 12px 12px; }
+    .btn-dl { width: 100%; padding: 8px; font-size: 0.8rem; justify-content: center; }
+
+    /* ── ZIP bar ── */
+    #zip-bar {
+      display: none; margin-top: 18px; padding: 14px 18px;
+      background: var(--accent-soft); border: 1px solid rgba(124,92,252,0.25);
+      border-radius: 10px; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    #zip-bar span { font-size: 0.88rem; }
+
+    @media (max-width: 540px) {
+      .controls-row { flex-direction: column; }
+      .action-btns  { flex-direction: column; }
+      .btn           { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>Image → <span>WebP</span> Converter</h1>
+    <p>Convert &amp; compress any image to WebP — entirely in your browser, nothing is uploaded to a server.</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Drop zone -->
+    <div id="drop-zone" role="button" tabindex="0" aria-label="Upload images">
+      <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+      <h2>Drag &amp; drop images here</h2>
+      <p>JPG · PNG · AVIF · JFIF · GIF · BMP · TIFF · WebP and more</p>
+      <button class="btn btn-primary" id="browse-btn" type="button">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        Browse files
+      </button>
+      <input type="file" id="file-input" multiple accept="image/*" />
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+
+      <!-- Mode toggle -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="mode-toggle">
+          <button class="mode-btn" id="mode-preset" type="button">Quality preset</button>
+          <button class="mode-btn active" id="mode-target" type="button">Target size</button>
+        </div>
+        <span style="font-size:0.78rem;color:var(--muted)" id="mode-desc">Automatically finds the best quality to hit your size limit.</span>
+      </div>
+
+      <div class="controls-row">
+
+        <!-- Quality presets (preset mode) -->
+        <div class="ctrl-group" id="preset-group" style="display:none;">
+          <span class="ctrl-label">Quality</span>
+          <div class="preset-pills">
+            <button class="preset-pill" data-q="0.92" type="button">Maximum <span style="color:var(--muted);font-weight:400">92%</span></button>
+            <button class="preset-pill active" data-q="0.82" type="button">Balanced <span style="color:var(--muted);font-weight:400">82%</span></button>
+            <button class="preset-pill" data-q="0.70" type="button">Smaller <span style="color:var(--muted);font-weight:400">70%</span></button>
+          </div>
+        </div>
+
+        <!-- Target size (target mode) -->
+        <div class="ctrl-group" id="target-group" style="max-width:200px;">
+          <label class="ctrl-label" for="target-kb">Target file size</label>
+          <div class="target-wrap">
+            <input type="number" id="target-kb" value="150" min="10" max="10000" />
+            <span class="target-unit">KB</span>
+          </div>
+        </div>
+
+        <!-- Max width -->
+        <div class="ctrl-group" style="max-width:210px;">
+          <label class="ctrl-label" for="max-width-select">Max width</label>
+          <select class="ctrl-select" id="max-width-select">
+            <option value="0">Original size</option>
+            <option value="2560">2560 px (2K)</option>
+            <option value="1920" selected>1920 px (Full HD) ★</option>
+            <option value="1280">1280 px (HD)</option>
+            <option value="800">800 px (Web thumb)</option>
+          </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-btns">
+          <button class="btn btn-primary" id="convert-all-btn" type="button">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Convert all
+          </button>
+          <button class="btn btn-outline" id="clear-btn" type="button">Clear</button>
+        </div>
+
+      </div>
+
+      <!-- Info bar -->
+      <div class="info-bar green" id="info-bar">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="info-text">Each image will be compressed until it's under 150 KB. Max width 1920px is also applied — enough for any screen.</span>
+      </div>
+
+    </div>
+
+    <!-- Progress -->
+    <div id="progress-wrap">
+      <div class="progress-bar-bg"><div id="progress-bar"></div></div>
+      <p id="progress-label">Converting…</p>
+    </div>
+
+    <!-- Image grid -->
+    <div id="image-grid"></div>
+
+    <!-- ZIP bar -->
+    <div id="zip-bar">
+      <span id="zip-label">0 images ready</span>
+      <button class="btn btn-primary" id="zip-btn" type="button">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M8.25 12l3.75 3.75m0 0l3.75-3.75M12 15.75V3" />
+        </svg>
+        Download all as ZIP
+      </button>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+  (() => {
+    const dropZone      = document.getElementById('drop-zone');
+    const fileInput     = document.getElementById('file-input');
+    const browseBtn     = document.getElementById('browse-btn');
+    const controls      = document.getElementById('controls');
+    const convertAllBtn = document.getElementById('convert-all-btn');
+    const clearBtn      = document.getElementById('clear-btn');
+    const imageGrid     = document.getElementById('image-grid');
+    const progressWrap  = document.getElementById('progress-wrap');
+    const progressBar   = document.getElementById('progress-bar');
+    const progressLabel = document.getElementById('progress-label');
+    const zipBar        = document.getElementById('zip-bar');
+    const zipLabel      = document.getElementById('zip-label');
+    const zipBtn        = document.getElementById('zip-btn');
+    const infoBar       = document.getElementById('info-bar');
+    const infoText      = document.getElementById('info-text');
+    const maxWidthSel   = document.getElementById('max-width-select');
+    const targetKbInput = document.getElementById('target-kb');
+    const modePresetBtn = document.getElementById('mode-preset');
+    const modeTargetBtn = document.getElementById('mode-target');
+    const presetGroup   = document.getElementById('preset-group');
+    const targetGroup   = document.getElementById('target-group');
+    const modeDesc      = document.getElementById('mode-desc');
+
+    let mode = 'target';           // 'preset' | 'target'
+    let selectedQuality = 0.82;
+    const items = [];
+
+    // ── Mode switch ───────────────────────────────────────────
+    modePresetBtn.addEventListener('click', () => setMode('preset'));
+    modeTargetBtn.addEventListener('click', () => setMode('target'));
+
+    function setMode(m) {
+      mode = m;
+      modePresetBtn.classList.toggle('active', m === 'preset');
+      modeTargetBtn.classList.toggle('active', m === 'target');
+      presetGroup.style.display = m === 'preset' ? '' : 'none';
+      targetGroup.style.display = m === 'target' ? '' : 'none';
+      modeDesc.textContent = m === 'target'
+        ? 'Automatically finds the best quality to hit your size limit.'
+        : 'Fixed quality level — faster, no size guarantee.';
+      updateInfoBar();
+    }
+
+    // ── Quality pills ─────────────────────────────────────────
+    document.querySelectorAll('.preset-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        selectedQuality = parseFloat(pill.dataset.q);
+        updateInfoBar();
+      });
+    });
+
+    maxWidthSel.addEventListener('change', updateInfoBar);
+    targetKbInput.addEventListener('input', updateInfoBar);
+
+    function updateInfoBar() {
+      const mw = parseInt(maxWidthSel.value);
+      const dimNote = mw ? `Max width ${mw}px is also applied.` : 'Original dimensions kept.';
+
+      if (mode === 'target') {
+        const kb = parseInt(targetKbInput.value) || 150;
+        infoBar.className = 'info-bar green';
+        infoText.textContent =
+          `Each image is compressed until it's under ${kb} KB — quality is kept as high as possible. ${dimNote}`;
+      } else {
+        const q = Math.round(selectedQuality * 100);
+        const est = q >= 90 ? '40–60%' : q >= 80 ? '60–80%' : '70–85%';
+        infoBar.className = 'info-bar yellow';
+        infoText.textContent =
+          `Fixed ${q}% quality — typically ${est} smaller than the original. No size guarantee. ${dimNote}`;
+      }
+    }
+
+    // ── Drag & drop ───────────────────────────────────────────
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      handleFiles(e.dataTransfer.files);
+    });
+    browseBtn.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+    dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    function handleFiles(fileList) {
+      const accepted = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+      if (!accepted.length) return;
+      accepted.forEach(addItem);
+      controls.style.display = 'flex';
+    }
+
+    const stemName = n => n.replace(/\.[^.]+$/, '') || n;
+    const fmtSize  = b => b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
+
+    // ── Add item card ─────────────────────────────────────────
+    function addItem(file) {
+      const idx  = items.length;
+      const item = { file, name: stemName(file.name), originalSize: file.size, blob: null, status: 'pending' };
+      items.push(item);
+
+      const card = document.createElement('div');
+      card.className = 'img-card';
+      card.id = 'card-' + idx;
+
+      const img = document.createElement('img');
+      img.className = 'img-preview';
+      img.alt = file.name;
+      const objUrl = URL.createObjectURL(file);
+      img.onload = () => { URL.revokeObjectURL(objUrl); };
+      img.src = objUrl;
+
+      const info = document.createElement('div');
+      info.className = 'img-info';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'img-name';
+      nameEl.title = file.name;
+      nameEl.textContent = file.name;
+
+      const statusEl = document.createElement('span');
+      statusEl.className = 'img-status status-pending';
+      statusEl.textContent = 'Pending';
+      statusEl.id = 'status-' + idx;
+
+      const sizesEl = document.createElement('div');
+      sizesEl.className = 'img-sizes';
+      sizesEl.id = 'sizes-' + idx;
+      sizesEl.textContent = fmtSize(file.size);
+
+      const detailEl = document.createElement('div');
+      detailEl.className = 'img-dim';
+      detailEl.id = 'detail-' + idx;
+
+      info.append(nameEl, statusEl, sizesEl, detailEl);
+
+      const actions = document.createElement('div');
+      actions.className = 'img-actions';
+
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'btn btn-outline btn-dl';
+      dlBtn.id = 'dl-' + idx;
+      dlBtn.type = 'button';
+      dlBtn.disabled = true;
+      dlBtn.textContent = 'Download WebP';
+      dlBtn.addEventListener('click', () => downloadSingle(idx));
+
+      actions.appendChild(dlBtn);
+      card.append(img, info, actions);
+      imageGrid.appendChild(card);
+    }
+
+    // ── Convert all ───────────────────────────────────────────
+    convertAllBtn.addEventListener('click', convertAll);
+
+    async function convertAll() {
+      const maxWidth = parseInt(maxWidthSel.value);
+      const targetBytes = (parseInt(targetKbInput.value) || 150) * 1024;
+      const pending = items.map((it, i) => ({ it, i })).filter(({ it }) => it.status !== 'done');
+      if (!pending.length) return;
+
+      convertAllBtn.disabled = true;
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '0%';
+
+      for (let j = 0; j < pending.length; j++) {
+        progressLabel.textContent = `Converting ${j + 1} / ${pending.length}…`;
+        progressBar.style.width = ((j / pending.length) * 100) + '%';
+
+        if (mode === 'target') {
+          await convertToTarget(pending[j].i, targetBytes, maxWidth);
+        } else {
+          await convertFixed(pending[j].i, selectedQuality, maxWidth);
+        }
+      }
+
+      progressBar.style.width = '100%';
+      progressLabel.textContent = `Done — ${pending.length} image${pending.length > 1 ? 's' : ''} converted.`;
+      convertAllBtn.disabled = false;
+      updateZipBar();
+    }
+
+    // ── Draw canvas with optional resize ─────────────────────
+    function drawCanvas(imgEl, maxWidth) {
+      let w = imgEl.naturalWidth;
+      let h = imgEl.naturalHeight;
+      if (maxWidth > 0 && w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+      return { canvas, w, h, origW: imgEl.naturalWidth };
+    }
+
+    function blobFromCanvas(canvas, quality) {
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+    }
+
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+        img.src = url;
+      });
+    }
+
+    // ── Fixed quality conversion ──────────────────────────────
+    async function convertFixed(idx, quality, maxWidth) {
+      const item = items[idx];
+      try {
+        const img = await loadImage(item.file);
+        const { canvas, w, origW } = drawCanvas(img, maxWidth);
+        const blob = await blobFromCanvas(canvas, quality);
+        if (!blob) { setStatus(idx, 'error', 'Error'); return; }
+        finalise(idx, blob, w, origW);
+      } catch { setStatus(idx, 'error', 'Error'); }
+    }
+
+    // ── Target-size adaptive conversion ───────────────────────
+    // Binary-searches quality, then scales dimensions if needed.
+    async function convertToTarget(idx, targetBytes, maxWidth) {
+      const item = items[idx];
+      try {
+        const img = await loadImage(item.file);
+
+        // Try with maxWidth first; if still over target try shrinking further
+        const scales = [1, 0.75, 0.5, 0.35, 0.25];
+        let bestBlob = null;
+        let bestW = 0, origW = img.naturalWidth;
+
+        for (const scale of scales) {
+          // Compute effective max width for this scale pass
+          const effectiveMax = maxWidth > 0
+            ? Math.round(maxWidth * scale)
+            : Math.round(img.naturalWidth * scale);
+
+          const { canvas, w } = drawCanvas(img, scale < 1 ? effectiveMax : maxWidth);
+
+          // Binary search quality between 0.92 down to 0.20
+          let lo = 0.20, hi = 0.92, blob = null;
+
+          // Quick check: even at max quality does it fit?
+          const topBlob = await blobFromCanvas(canvas, hi);
+          if (topBlob && topBlob.size <= targetBytes) {
+            // It fits at high quality — refine upward isn't needed, just use it
+            blob = topBlob;
+          } else {
+            // Binary search
+            for (let pass = 0; pass < 8; pass++) {
+              const mid = (lo + hi) / 2;
+              const candidate = await blobFromCanvas(canvas, mid);
+              if (!candidate) break;
+              if (candidate.size <= targetBytes) {
+                blob = candidate;
+                lo = mid;
+              } else {
+                hi = mid;
+              }
+            }
+          }
+
+          if (blob && blob.size <= targetBytes) {
+            bestBlob = blob;
+            bestW = w;
+            break; // found a solution at this scale
+          }
+
+          // Even at lowest quality this scale is over — try next (smaller) scale
+          if (!bestBlob && blob) { bestBlob = blob; bestW = w; } // keep best effort
+        }
+
+        if (!bestBlob) { setStatus(idx, 'error', 'Error'); return; }
+
+        const underTarget = bestBlob.size <= targetBytes;
+        finalise(idx, bestBlob, bestW, origW, !underTarget);
+
+      } catch { setStatus(idx, 'error', 'Error'); }
+    }
+
+    // ── Finalise card ─────────────────────────────────────────
+    function finalise(idx, blob, newW, origW, overTarget = false) {
+      const item = items[idx];
+      item.blob   = blob;
+      item.status = 'done';
+
+      const card = document.getElementById('card-' + idx);
+      if (overTarget) card.classList.add('over-target');
+
+      setStatus(idx, overTarget ? 'warn' : 'done', overTarget ? 'Best effort' : 'Done');
+
+      const sizesEl  = document.getElementById('sizes-' + idx);
+      const detailEl = document.getElementById('detail-' + idx);
+      const saving   = ((1 - blob.size / item.originalSize) * 100).toFixed(1);
+
+      sizesEl.innerHTML = `${fmtSize(item.originalSize)} → ` +
+        `<span class="${overTarget ? 'over' : 'after'}">${fmtSize(blob.size)}</span> ` +
+        `<span style="color:var(--muted)">(${saving > 0 ? '−' + saving : '+' + Math.abs(saving)}%)</span>`;
+
+      if (newW !== origW) detailEl.textContent = `Resized: ${origW} → ${newW} px`;
+
+      if (overTarget) {
+        detailEl.textContent = (detailEl.textContent ? detailEl.textContent + ' · ' : '') +
+          'Could not reach target — image saved at minimum quality';
+      }
+
+      document.getElementById('dl-' + idx).disabled = false;
+    }
+
+    function setStatus(idx, type, text) {
+      const el = document.getElementById('status-' + idx);
+      el.className = 'img-status status-' + type;
+      el.textContent = text;
+    }
+
+    // ── Download single ───────────────────────────────────────
+    function downloadSingle(idx) {
+      const item = items[idx];
+      if (!item.blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(item.blob);
+      a.download = item.name + '.webp';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+
+    // ── ZIP ───────────────────────────────────────────────────
+    function updateZipBar() {
+      const done = items.filter(it => it.status === 'done').length;
+      zipBar.style.display = done > 1 ? 'flex' : 'none';
+      if (done > 1) zipLabel.textContent = `${done} images ready`;
+    }
+
+    zipBtn.addEventListener('click', async () => {
+      const done = items.filter(it => it.status === 'done');
+      if (!done.length) return;
+      zipBtn.disabled = true;
+      zipBtn.textContent = 'Preparing ZIP…';
+
+      const zip = new JSZip();
+      const seen = {};
+      done.forEach(it => {
+        let name = it.name + '.webp';
+        if (seen[name] !== undefined) { seen[name]++; name = it.name + '_' + seen[name] + '.webp'; }
+        else seen[name] = 0;
+        zip.file(name, it.blob);
+      });
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = 'webp-images.zip';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+
+      zipBtn.disabled = false;
+      zipBtn.innerHTML = `<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M8.25 12l3.75 3.75m0 0l3.75-3.75M12 15.75V3"/></svg> Download all as ZIP`;
+    });
+
+    // ── Clear ─────────────────────────────────────────────────
+    clearBtn.addEventListener('click', () => {
+      items.length = 0;
+      imageGrid.innerHTML = '';
+      controls.style.display = 'none';
+      progressWrap.style.display = 'none';
+      zipBar.style.display = 'none';
+      fileInput.value = '';
+    });
+
+  })();
+  </script>
+
+</body>
+</html>

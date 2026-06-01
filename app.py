@@ -103,6 +103,10 @@ def performance_marketing():
 def work():
     return render_template("work.html")
 
+@app.route("/converter")
+def converter():
+    return render_template("pages/converter.html")
+
 @app.route("/blog")
 def blog():
     page = request.args.get("page", 1, type=int)

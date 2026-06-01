@@ -3,13 +3,13 @@
    ============================================= */
 
 :root {
-  --admin-blue:   #4D7CFE;
-  --admin-dark:   #0B1C3D;
+  --admin-blue:   #0a0a0a;
+  --admin-dark:   #0a0a0a;
   --admin-danger: #E53935;
-  --bg-gray:      #f4f6fb;
-  --border:       #e4e9f2;
-  --text:         #1a2340;
-  --text-muted:   #6b7a9a;
+  --bg-gray:      #f9f9f9;
+  --border:       #eaeaea;
+  --text:         #0a0a0a;
+  --text-muted:   #888888;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -146,8 +146,10 @@ body {
 }
 
 .admin-container h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
   color: var(--admin-dark);
   margin: 0 0 1.75rem;
 }
@@ -299,7 +301,7 @@ input[type="file"] {
 }
 
 .btn-primary:hover {
-  background: #3a68ef;
+  background: #333;
   transform: translateY(-1px);
 }
 
@@ -309,7 +311,7 @@ input[type="file"] {
 }
 
 .btn-secondary:hover {
-  background: #dce7ff;
+  background: #e0e0e0;
 }
 
 .btn-danger {
@@ -355,7 +357,7 @@ button[type="submit"] {
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #eef3ff 0%, #f8faff 100%);
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1.75rem;
@@ -394,7 +396,7 @@ button[type="submit"] {
 .admin-table th {
   text-align: left;
   padding: 0.75rem 1rem;
-  background: #f4f6fb;
+  background: #f0f0f0;
   color: var(--text-muted);
   text-transform: uppercase;
   font-size: 0.74rem;
@@ -415,7 +417,7 @@ button[type="submit"] {
 }
 
 .admin-table tr:hover td {
-  background: #fafbff;
+  background: #f9f9f9;
 }
 
 .admin-table .actions {
