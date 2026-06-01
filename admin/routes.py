@@ -69,6 +69,13 @@ def create_blog():
     ]
 
     if form.validate_on_submit():
+        # Read content directly from request so it's never lost via WTForms binding
+        content = request.form.get('content', '').strip()
+        # Treat Quill's empty-editor sentinel as no content
+        if content in ('', '<p><br></p>', '<p></p>'):
+            flash("Blog content cannot be empty.", "error")
+            return render_template("admin/blog_form.html", form=form, is_edit=False)
+
         # Handle Image Upload
         image_url = None
         if form.featured_image.data:
@@ -79,7 +86,7 @@ def create_blog():
             title=form.title.data,
             slug=generate_unique_slug(form.title.data),
             summary=form.summary.data,
-            content=form.content.data,  # Correctly grabs HTML from Quill via admin.js
+            content=content,
             author_name=form.author_name.data,
             category_id=form.category_id.data,
             featured_image=image_url,
@@ -117,10 +124,15 @@ def edit_blog(blog_id):
     ]
 
     if form.validate_on_submit():
+        content = request.form.get('content', '').strip()
+        if content in ('', '<p><br></p>', '<p></p>'):
+            flash("Blog content cannot be empty.", "error")
+            return render_template("admin/blog_form.html", form=form, is_edit=True)
+
         post.title = form.title.data
         post.slug = generate_unique_slug(form.slug.data, post_id=post.id)
         post.summary = form.summary.data
-        post.content = form.content.data
+        post.content = content
         post.author_name = form.author_name.data
         post.category_id = form.category_id.data
         post.is_published = form.is_published.data

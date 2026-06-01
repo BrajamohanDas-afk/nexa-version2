@@ -69,105 +69,133 @@
 <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    var container    = document.getElementById("editor-container");
-    var hiddenInput  = document.getElementById("hidden-content");
-    var form         = document.getElementById("blog-form");
-    var wordCountEl  = document.getElementById("word-count");
-    var charCountEl  = document.getElementById("char-count");
+(function () {
+    var container   = document.getElementById("editor-container");
+    var hiddenInput = document.getElementById("hidden-content");
+    var form        = document.getElementById("blog-form");
+    var wordCountEl = document.getElementById("word-count");
+    var charCountEl = document.getElementById("char-count");
 
-    if (!container || !hiddenInput) return;
+    if (!container || !hiddenInput || !form) return;
 
-    var quill = new Quill("#editor-container", {
-        theme: "snow",
-        placeholder: "Write your blog content here…",
-        modules: {
-            toolbar: {
-                container: [
-                    [{ header: [1, 2, 3, false] }],
-                    [{ font: [] }],
-                    [{ size: ["small", false, "large", "huge"] }],
-                    ["bold", "italic", "underline", "strike"],
-                    [{ color: [] }, { background: [] }],
-                    [{ script: "sub" }, { script: "super" }],
-                    ["blockquote", "code-block"],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    [{ indent: "-1" }, { indent: "+1" }],
-                    [{ align: [] }],
-                    ["link", "image", "video"],
-                    ["clean"]
-                ],
-                handlers: {
-                    image: function () {
-                        var input = document.createElement("input");
-                        input.setAttribute("type", "file");
-                        input.setAttribute("accept", "image/*");
-                        input.click();
+    // ── Quill failed to load from CDN — show plain textarea fallback ──
+    if (typeof Quill === "undefined") {
+        var ta = document.createElement("textarea");
+        ta.name  = "content";
+        ta.id    = "content-fallback";
+        ta.rows  = 18;
+        ta.value = hiddenInput.value;
+        ta.style.cssText = "width:100%;padding:12px;font-size:0.95rem;border:1px solid #ddd;border-radius:8px;font-family:inherit;resize:vertical;";
+        container.parentNode.insertBefore(ta, container);
+        container.style.display = "none";
+        hiddenInput.name = "";          // disable the original hidden field
+        ta.addEventListener("input", function () {
+            hiddenInput.value = ta.value;
+        });
+        console.warn("Quill did not load — using plain textarea fallback.");
+        return;
+    }
 
-                        input.onchange = function () {
-                            var file = input.files[0];
-                            if (!file) return;
-
-                            var formData = new FormData();
-                            formData.append("image", file);
-
-                            fetch("{{ url_for('admin.upload_image') }}", {
-                                method: "POST",
-                                body: formData
-                            })
-                            .then(function (res) { return res.json(); })
-                            .then(function (data) {
-                                if (data.url) {
-                                    var range = quill.getSelection(true);
-                                    quill.insertEmbed(range.index, "image", data.url);
-                                    quill.setSelection(range.index + 1);
-                                } else {
-                                    alert("Image upload failed: " + (data.error || "Unknown error"));
-                                }
-                            })
-                            .catch(function (err) {
-                                alert("Image upload failed: " + err.message);
-                            });
-                        };
+    // ── Normal Quill initialisation ──
+    var quill;
+    try {
+        quill = new Quill("#editor-container", {
+            theme: "snow",
+            placeholder: "Write your blog content here…",
+            modules: {
+                toolbar: {
+                    container: [
+                        [{ header: [1, 2, 3, false] }],
+                        [{ font: [] }],
+                        [{ size: ["small", false, "large", "huge"] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ color: [] }, { background: [] }],
+                        [{ script: "sub" }, { script: "super" }],
+                        ["blockquote", "code-block"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        [{ indent: "-1" }, { indent: "+1" }],
+                        [{ align: [] }],
+                        ["link", "image", "video"],
+                        ["clean"]
+                    ],
+                    handlers: {
+                        image: function () {
+                            var input = document.createElement("input");
+                            input.setAttribute("type", "file");
+                            input.setAttribute("accept", "image/*");
+                            input.click();
+                            input.onchange = function () {
+                                var file = input.files[0];
+                                if (!file) return;
+                                var formData = new FormData();
+                                formData.append("image", file);
+                                fetch("{{ url_for('admin.upload_image') }}", {
+                                    method: "POST",
+                                    body: formData
+                                })
+                                .then(function (res) { return res.json(); })
+                                .then(function (data) {
+                                    if (data.url) {
+                                        var range = quill.getSelection(true);
+                                        quill.insertEmbed(range.index, "image", data.url);
+                                        quill.setSelection(range.index + 1);
+                                    } else {
+                                        alert("Image upload failed: " + (data.error || "Unknown error"));
+                                    }
+                                })
+                                .catch(function (err) {
+                                    alert("Image upload failed: " + err.message);
+                                });
+                            };
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    } catch (err) {
+        console.error("Quill init failed:", err);
+        return;
+    }
 
+    // Load existing content (edit mode)
     if (hiddenInput.value) {
         quill.root.innerHTML = hiddenInput.value;
+    }
+
+    function syncContent() {
+        hiddenInput.value = quill.root.innerHTML;
     }
 
     function updateCounts() {
         var text  = quill.getText().trim();
         var words = text.length > 0 ? text.split(/\s+/).length : 0;
-        wordCountEl.textContent = words + " word" + (words !== 1 ? "s" : "");
-        charCountEl.textContent = text.length + " character" + (text.length !== 1 ? "s" : "");
+        if (wordCountEl) wordCountEl.textContent = words + " word" + (words !== 1 ? "s" : "");
+        if (charCountEl) charCountEl.textContent = text.length + " character" + (text.length !== 1 ? "s" : "");
     }
 
+    // Sync on every keystroke
     quill.on("text-change", function () {
-        hiddenInput.value = quill.root.innerHTML;
+        syncContent();
         updateCounts();
     });
 
     updateCounts();
 
-    if (form) {
-        form.addEventListener("submit", function (e) {
-            hiddenInput.value = quill.root.innerHTML;
-            if (quill.getText().trim().length === 0) {
-                alert("Blog content cannot be empty!");
-                e.preventDefault();
-                return false;
-            }
-        });
-    }
+    // Sync + validate on submit
+    form.addEventListener("submit", function (e) {
+        syncContent();
+        var text = quill.getText().trim();
+        if (!text || text.length === 0) {
+            alert("Blog content cannot be empty. Please write something before saving.");
+            e.preventDefault();
+            return false;
+        }
+    });
 
-    // Auto-generate slug from title
-    var titleInput  = document.getElementById("title");
-    var slugInput   = document.getElementById("slug");
-    var slugEdited  = !!(slugInput && slugInput.value);
+    // ── Auto-generate slug from title ──
+    var titleInput = document.getElementById("title");
+    var slugInput  = document.getElementById("slug");
+    var slugEdited = !!(slugInput && slugInput.value);
 
     if (slugInput) {
         slugInput.addEventListener("input", function () { slugEdited = true; });
@@ -185,6 +213,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-});
+}());
 </script>
 {% endblock %}
