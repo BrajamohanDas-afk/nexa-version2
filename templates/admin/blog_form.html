@@ -45,11 +45,76 @@
     <label>Featured Image</label>
     {% if is_edit and form.featured_image.data %}
       <div class="image-preview">
-        <img src="{{ form.featured_image.data }}" alt="Featured Image">
+        <img src="{{ form.featured_image.data }}" alt="{{ form.featured_image_alt.data or 'Featured Image' }}">
         <p class="image-hint">Current image — upload a new file to replace it</p>
       </div>
     {% endif %}
     {{ form.featured_image() }}
+
+    <label for="featured_image_alt" style="margin-top: 1rem;">
+      Image Alt Text
+      <small style="color: var(--text-muted); font-weight: 400; text-transform: none; letter-spacing: 0;">
+        — describes the image for screen readers &amp; Google Image Search
+      </small>
+    </label>
+    {{ form.featured_image_alt(class="input", id="featured_image_alt", placeholder="e.g. Team working on a web design project in Berlin") }}
+
+    <!-- ══════════════ SEO PANEL ══════════════ -->
+    <div class="seo-panel">
+      <div class="seo-panel-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        SEO Settings
+      </div>
+
+      <div class="seo-panel-body">
+
+        <!-- SEO Title -->
+        <div class="seo-field">
+          <label for="seo_title">
+            SEO Title
+            <small>— overrides the &lt;title&gt; tag shown in Google results (leave blank to use post title)</small>
+          </label>
+          {{ form.seo_title(class="input", id="seo_title", placeholder="e.g. Top 10 AI Tools for Startups in 2025 | Nexa Solutions") }}
+          <div class="seo-counter">
+            <span id="seo-title-count">0</span>/60 characters
+            <span class="seo-counter-badge" id="seo-title-badge"></span>
+          </div>
+        </div>
+
+        <!-- Meta Description -->
+        <div class="seo-field">
+          <label for="seo_description">
+            Meta Description
+            <small>— shown as the snippet under your page title in search results</small>
+          </label>
+          {{ form.seo_description(class="textarea", id="seo_description", rows=3, placeholder="e.g. Discover the top AI tools transforming startups in 2025. From automation to analytics — Nexa breaks it down.") }}
+          <div class="seo-counter">
+            <span id="seo-desc-count">0</span>/160 characters
+            <span class="seo-counter-badge" id="seo-desc-badge"></span>
+          </div>
+        </div>
+
+        <!-- Focus Keywords -->
+        <div class="seo-field">
+          <label for="seo_keywords">
+            Focus Keywords
+            <small>— comma-separated; used in the &lt;meta keywords&gt; tag and to guide your writing</small>
+          </label>
+          {{ form.seo_keywords(class="input", id="seo_keywords", placeholder="e.g. AI tools, startup growth, machine learning, Nexa Solutions") }}
+          <div class="seo-tags" id="seo-keyword-tags"></div>
+        </div>
+
+        <!-- SEO Preview -->
+        <div class="seo-preview-box">
+          <p class="seo-preview-label">Google Preview</p>
+          <div class="seo-preview-url">nexasolutions.de › blog › <span id="preview-slug">your-post-slug</span></div>
+          <div class="seo-preview-title" id="preview-title">Your SEO title will appear here</div>
+          <div class="seo-preview-desc" id="preview-desc">Your meta description will appear here. Make it compelling — this is what users read before clicking.</div>
+        </div>
+
+      </div>
+    </div>
+    <!-- ════════════════════════════════════════ -->
 
     <label class="checkbox" style="margin-top: 1.4rem;">
       {{ form.is_published() }} Publish now
@@ -215,8 +280,66 @@ document.addEventListener("DOMContentLoaded", function () {
                     .replace(/-+/g, "-")
                     .replace(/^-|-$/g, "");
             }
+            updateSeoPreview();
         });
     }
+
+    // ── SEO character counters + Google preview ──
+    var seoTitleInput = document.getElementById("seo_title");
+    var seoDescInput  = document.getElementById("seo_description");
+    var seoKwInput    = document.getElementById("seo_keywords");
+
+    var titleCountEl  = document.getElementById("seo-title-count");
+    var titleBadgeEl  = document.getElementById("seo-title-badge");
+    var descCountEl   = document.getElementById("seo-desc-count");
+    var descBadgeEl   = document.getElementById("seo-desc-badge");
+
+    var previewSlugEl  = document.getElementById("preview-slug");
+    var previewTitleEl = document.getElementById("preview-title");
+    var previewDescEl  = document.getElementById("preview-desc");
+    var kwTagsEl       = document.getElementById("seo-keyword-tags");
+
+    function badge(el, len, warn, max) {
+        if (!el) return;
+        if (len === 0)       { el.textContent = ""; el.className = "seo-counter-badge"; }
+        else if (len < warn) { el.textContent = "Too short"; el.className = "seo-counter-badge badge-warn"; }
+        else if (len <= max) { el.textContent = "Good";      el.className = "seo-counter-badge badge-good"; }
+        else                 { el.textContent = "Too long";  el.className = "seo-counter-badge badge-bad";  }
+    }
+
+    function updateSeoPreview() {
+        var titleVal = seoTitleInput ? seoTitleInput.value.trim() : "";
+        var descVal  = seoDescInput  ? seoDescInput.value.trim()  : "";
+        var postTitle = titleInput   ? titleInput.value.trim()     : "";
+        var slug     = slugInput     ? slugInput.value.trim()      : "";
+
+        if (titleCountEl) titleCountEl.textContent = titleVal.length;
+        if (descCountEl)  descCountEl.textContent  = descVal.length;
+        badge(titleBadgeEl, titleVal.length, 30, 60);
+        badge(descBadgeEl,  descVal.length,  70, 160);
+
+        if (previewSlugEl)  previewSlugEl.textContent  = slug  || "your-post-slug";
+        if (previewTitleEl) previewTitleEl.textContent = titleVal || postTitle || "Your SEO title will appear here";
+        if (previewDescEl)  previewDescEl.textContent  = descVal  || "Your meta description will appear here. Make it compelling — this is what users read before clicking.";
+    }
+
+    function renderKeywordTags() {
+        if (!kwTagsEl || !seoKwInput) return;
+        var raw = seoKwInput.value;
+        var tags = raw.split(",").map(function(k){ return k.trim(); }).filter(Boolean);
+        kwTagsEl.innerHTML = tags.map(function(t) {
+            return '<span class="kw-tag">' + t.replace(/</g, "&lt;") + '</span>';
+        }).join("");
+    }
+
+    if (seoTitleInput) seoTitleInput.addEventListener("input", updateSeoPreview);
+    if (seoDescInput)  seoDescInput.addEventListener("input",  updateSeoPreview);
+    if (slugInput)     slugInput.addEventListener("input",     updateSeoPreview);
+    if (seoKwInput)    seoKwInput.addEventListener("input",    renderKeywordTags);
+
+    // Init on page load (edit mode)
+    updateSeoPreview();
+    renderKeywordTags();
 
 });
 </script>

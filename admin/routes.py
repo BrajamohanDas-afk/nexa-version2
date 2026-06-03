@@ -90,6 +90,10 @@ def create_blog():
             author_name=form.author_name.data,
             category_id=form.category_id.data,
             featured_image=image_url,
+            featured_image_alt=form.featured_image_alt.data or None,
+            seo_title=form.seo_title.data or None,
+            seo_description=form.seo_description.data or None,
+            seo_keywords=form.seo_keywords.data or None,
             is_published=form.is_published.data,
             published_at=db.func.now() if form.is_published.data else None,
         )
@@ -135,6 +139,10 @@ def edit_blog(blog_id):
         post.content = content
         post.author_name = form.author_name.data
         post.category_id = form.category_id.data
+        post.featured_image_alt = form.featured_image_alt.data or None
+        post.seo_title = form.seo_title.data or None
+        post.seo_description = form.seo_description.data or None
+        post.seo_keywords = form.seo_keywords.data or None
         post.is_published = form.is_published.data
 
         if form.is_published.data and not post.published_at:

@@ -568,6 +568,137 @@ button[type="submit"] {
 
 .ql-lineheight.ql-picker { width: 90px; }
 
+/* ── SEO Panel ── */
+.seo-panel {
+  border: 1.5px solid #e0e4ef;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 2rem;
+}
+
+.seo-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: #f4f6fb;
+  border-bottom: 1.5px solid #e0e4ef;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.seo-panel-body {
+  padding: 1.5rem 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.seo-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: 0.45rem;
+}
+
+.seo-field label small {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #aaa;
+}
+
+.seo-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+.seo-counter-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.badge-good { background: #d1fae5; color: #065f46; }
+.badge-warn { background: #fef3c7; color: #92400e; }
+.badge-bad  { background: #fee2e2; color: #991b1b; }
+
+/* Keyword tags */
+.seo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.kw-tag {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.78rem;
+  color: #333;
+}
+
+/* Google preview box */
+.seo-preview-box {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 1.1rem 1.3rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.seo-preview-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 0.6rem;
+}
+
+.seo-preview-url {
+  font-size: 0.8rem;
+  color: #1a7f37;
+  margin-bottom: 0.15rem;
+  word-break: break-all;
+}
+
+.seo-preview-title {
+  font-size: 1.08rem;
+  font-weight: 400;
+  color: #1a0dab;
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seo-preview-desc {
+  font-size: 0.85rem;
+  color: #4d5156;
+  line-height: 1.55;
+  max-width: 600px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Word / char count bar */
 .editor-footer {
   display: flex;

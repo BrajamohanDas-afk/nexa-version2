@@ -50,6 +50,8 @@ class BlogPost(db.Model):
     # ===== SEO =====
     seo_title = Column(String(255))
     seo_description = Column(String(300))
+    seo_keywords = Column(Text)            # comma-separated keyword list
+    featured_image_alt = Column(String(255))
 
     # ===== RELATIONS =====
     category_id = Column(
