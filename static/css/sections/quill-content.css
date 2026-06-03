@@ -24,7 +24,7 @@
     line-height: 1.18;
     letter-spacing: -0.01em;
     color: #0a0a0a;
-    margin: 1.8rem 0 0.9rem;
+    margin: 1.6rem 0 0.45rem;
 }
 
 .blog-summary h3 {
@@ -33,7 +33,7 @@
     font-weight: 700;
     line-height: 1.3;
     color: #111;
-    margin: 1.5rem 0 0.8rem;
+    margin: 1.3rem 0 0.35rem;
 }
 
 .blog-summary h4 {
@@ -41,15 +41,15 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: #222;
-    margin: 1.3rem 0 0.6rem;
+    margin: 1.1rem 0 0.3rem;
 }
 
-/* Paragraphs */
+/* Paragraphs — line-height here is a default; Quill inline styles override it */
 .blog-summary p {
     font-size: 1.02rem;
     line-height: 1.82;
     color: rgba(0, 0, 0, 0.74);
-    margin-bottom: 1.15rem;
+    margin-bottom: 1rem;
 }
 
 /* Empty lines (Enter key in Quill produces <p><br></p>) render as visible spacing */
@@ -94,7 +94,8 @@
 .blog-summary ul,
 .blog-summary ol {
     padding-left: 1.6rem;
-    margin-bottom: 1.2rem;
+    margin-top: 0.35rem;
+    margin-bottom: 0.9rem;
 }
 
 .blog-summary ul {
@@ -107,13 +108,31 @@
 
 .blog-summary li {
     font-size: 1rem;
-    line-height: 1.78;
+    line-height: 1.6;
     color: rgba(0, 0, 0, 0.72);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.18rem;
+}
+
+/* Quill sometimes wraps <li> content in <p> — strip that margin */
+.blog-summary li p {
+    margin-bottom: 0;
+    line-height: inherit;
 }
 
 .blog-summary li::marker {
     color: #0a0a0a;
+}
+
+/* Tighten gap between a heading and the list that immediately follows it */
+.blog-summary h1 + ul,
+.blog-summary h1 + ol,
+.blog-summary h2 + ul,
+.blog-summary h2 + ol,
+.blog-summary h3 + ul,
+.blog-summary h3 + ol,
+.blog-summary h4 + ul,
+.blog-summary h4 + ol {
+    margin-top: 0.1rem;
 }
 
 /* Nested lists */
@@ -121,8 +140,8 @@
 .blog-summary ol ol,
 .blog-summary ul ol,
 .blog-summary ol ul {
-    margin-top: 0.3rem;
-    margin-bottom: 0.3rem;
+    margin-top: 0.15rem;
+    margin-bottom: 0.15rem;
 }
 
 /* Blockquotes */

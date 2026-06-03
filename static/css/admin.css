@@ -551,6 +551,23 @@ button[type="submit"] {
   z-index: 10;
 }
 
+/* Line-height (spacing) dropdown label in the Quill toolbar */
+.ql-lineheight .ql-picker-label::before {
+  content: "Spacing";
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.ql-lineheight .ql-picker-item[data-value="1"]::before   { content: "1× (Tight)"; }
+.ql-lineheight .ql-picker-item[data-value="1.2"]::before { content: "1.2×"; }
+.ql-lineheight .ql-picker-item[data-value="1.5"]::before { content: "1.5×"; }
+.ql-lineheight .ql-picker-item[data-value="1.8"]::before { content: "1.8× (Default)"; }
+.ql-lineheight .ql-picker-item[data-value="2"]::before   { content: "2× (Double)"; }
+.ql-lineheight .ql-picker-item[data-value="2.5"]::before { content: "2.5×"; }
+.ql-lineheight .ql-picker-item[data-value="3"]::before   { content: "3× (Wide)"; }
+
+.ql-lineheight.ql-picker { width: 90px; }
+
 /* Word / char count bar */
 .editor-footer {
   display: flex;

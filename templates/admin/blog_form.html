@@ -98,6 +98,14 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    // ── Register custom line-height format ──
+    var Parchment = Quill.import("parchment");
+    var LineHeightStyle = new Parchment.Attributor.Style(
+        "lineheight", "line-height",
+        { scope: Parchment.Scope.BLOCK, whitelist: ["1", "1.2", "1.5", "1.8", "2", "2.5", "3"] }
+    );
+    Quill.register(LineHeightStyle, true);
+
     // ── Initialise Quill ──
     var quill = new Quill("#editor-container", {
         theme: "snow",
@@ -114,6 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     ["blockquote", "code-block"],
                     [{ list: "ordered" }, { list: "bullet" }],
                     [{ indent: "-1" }, { indent: "+1" }],
+                    [{ lineheight: ["1", "1.2", "1.5", "1.8", "2", "2.5", "3"] }],
                     [{ align: [] }],
                     ["link", "image", "video"],
                     ["clean"]
