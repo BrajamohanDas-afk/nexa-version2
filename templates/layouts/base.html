@@ -3,7 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Nexa Solutions{% endblock %}</title>
+{% block meta %}
+<meta name="description" content="Nexa Solutions is a top-tier IT agency providing expert Website Development, SaaS products, comprehensive IT solutions, CRM systems, and AI integration.">
+<meta name="keywords" content="Website Development, SaaS products, IT solutions, CRM, AI, web design, software engineering">
+{% endblock %}
+<title>{% block title %}Nexa Solutions — IT Agency &amp; Technology Partner{% endblock %}</title>
+
+<!-- Open Graph / Social Sharing -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.url }}">
+<meta property="og:title" content="{{ self.title()|striptags|trim }}">
+<meta property="og:description" content="Nexa Solutions is a top-tier IT agency providing expert Website Development, SaaS products, comprehensive IT solutions, CRM systems, and AI integration.">
+<meta property="og:image" content="{{ url_for('static', filename='images/og-image.jpg', _external=True) }}">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="{{ request.url }}">
+<meta property="twitter:title" content="{{ self.title()|striptags|trim }}">
+<meta property="twitter:description" content="Nexa Solutions is a top-tier IT agency providing expert Website Development, SaaS products, comprehensive IT solutions, CRM systems, and AI integration.">
+<meta property="twitter:image" content="{{ url_for('static', filename='images/og-image.jpg', _external=True) }}">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{{ request.url }}">
+
 <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/favicons/apple-touch-icon.png') }}">
 <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicons/favicon-32x32.png') }}">
 <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicons/favicon-16x16.png') }}">
@@ -14,6 +36,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 <script src="{{ url_for('static', filename='animations/why-us-animations.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+<!-- Organization JSON-LD Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Nexa Solutions",
+  "url": "https://nexasolutions.de",
+  "logo": "https://nexasolutions.de/static/images/logo.png",
+  "description": "Nexa Solutions is a top-tier IT agency providing expert Website Development, SaaS products, comprehensive IT solutions, CRM systems, and AI integration.",
+  "sameAs": [
+    "https://www.linkedin.com/company/nexasolutions",
+    "https://twitter.com/nexasolutions"
+  ]
+}
+</script>
+
 {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">

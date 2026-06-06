@@ -1,10 +1,54 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}Web Development Services — Nexa Solutions{% endblock %}
+{% block title %}Custom Website Development &amp; SaaS Products | Nexa Solutions{% endblock %}
+
+{% block meta %}
+<meta name="description" content="Expert Website Development and custom SaaS products. We build high-converting, scalable websites, e-commerce stores, and enterprise web applications.">
+<meta name="keywords" content="Website Development, SaaS products, Web Design, Custom Web Apps">
+{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/web-development.css') }}">
-<meta name="description" content="Custom web development services — Shopify, WordPress, React, Flask, Python and more. We build every type of website that converts visitors into customers.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Custom Web Development & SaaS Solutions",
+  "provider": {
+    "@type": "Organization",
+    "name": "Nexa Solutions"
+  },
+  "description": "Expert Website Development and custom SaaS products. We build high-converting, scalable websites, e-commerce stores, and enterprise web applications.",
+  "areaServed": "Worldwide",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Web Development Services",
+    "itemListElement": [
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "E-Commerce Development"
+        }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "SaaS Applications"
+        }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": "Corporate Websites"
+        }
+      }
+    ]
+  }
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -18,9 +62,9 @@
 
             <!-- LEFT — Text -->
             <div class="wd-hero-text">
-                <h1 class="wd-hero-title">Web Development<br>Agency</h1>
+                <h1 class="wd-hero-title">Custom Web Development<br>&amp; SaaS Agency</h1>
                 <p class="wd-hero-sub">
-                    We develop websites and online stores that turn visitors into customers — with creativity, technical know-how, and enthusiasm.
+                    We engineer high-performance websites, scalable SaaS products, and enterprise IT solutions that drive growth and turn visitors into customers.
                 </p>
                 <div class="wd-hero-btns">
                     <a href="#wd-types" class="wd-btn wd-btn--outline">Learn more</a>
@@ -33,7 +77,7 @@
                 <div class="wd-hero-laptop-wrap">
                     <img
                         src="{{ url_for('static', filename='images/services/web-dev.png') }}"
-                        alt="Web Development — Nexa Solutions"
+                        alt="Custom Web Development and SaaS Products by Nexa Solutions"
                         class="wd-hero-laptop"
                     >
                 </div>
@@ -53,7 +97,7 @@
             <div class="wd-certified-visual wd-reveal-left">
                 <img
                     src="{{ url_for('static', filename='images/services/stacks.png') }}"
-                    alt="Technology stacks we work with"
+                    alt="Technology stacks for Web Development, SaaS, and IT Solutions"
                     class="wd-certified-img"
                 >
             </div>
@@ -61,12 +105,12 @@
             <!-- RIGHT — Text -->
             <div class="wd-certified-text wd-reveal-right">
                 <span class="wd-section-label">Our Technology Partners</span>
-                <h2 class="wd-section-title">Your Certified<br>Web Design Agency</h2>
+                <h2 class="wd-section-title">Your Certified<br>Web Development &amp; IT Solutions Partner</h2>
                 <p class="wd-certified-desc">
-                    As specialised partners certified in the latest design and development technologies, we offer you tailor-made solutions that take your online presence to a whole new level.
+                    As specialized partners certified in the latest design and development technologies, we offer tailor-made SaaS products and IT solutions that take your online presence to a whole new level.
                 </p>
                 <p class="wd-certified-desc">
-                    Our expertise includes responsive design, UX/UI optimisation, and the latest web standards to make your website both visually stunning and highly functional.
+                    Our expertise includes responsive design, UX/UI optimization, robust CRM integrations, and the latest web standards to make your website both visually stunning and highly functional.
                 </p>
                 <div class="wd-certified-btns">
                     <a href="#wd-types" class="wd-btn wd-btn--primary">Explore Our Work</a>
@@ -86,7 +130,7 @@
             <!-- Header -->
             <div class="wd-types-header wd-reveal">
                 <span class="wd-section-label">What We Build</span>
-                <h2 class="wd-section-title">Every Type of Website.<br>Built to Perfection.</h2>
+                <h2 class="wd-section-title">Every Type of Website &amp; SaaS Product.<br>Built to Perfection.</h2>
                 <p class="wd-section-desc" style="margin:0 auto; text-align:center;">
                     From simple landing pages to complex e-commerce ecosystems — click any category to explore what we build.
                 </p>
@@ -151,7 +195,7 @@
                         <a href="{{ url_for('contact') }}" class="wd-btn wd-btn--primary">Build My Store</a>
                     </div>
                     <div class="wd-panel-image">
-                        <img src="{{ url_for('static', filename='images/services/ecommerce.png') }}" alt="E-Commerce" loading="lazy">
+                        <img src="{{ url_for('static', filename='images/services/ecommerce.png') }}" alt="Custom E-Commerce Website Development" loading="lazy">
                     </div>
                 </div>
 
@@ -169,7 +213,7 @@
                         <a href="{{ url_for('contact') }}" class="wd-btn wd-btn--primary">Get a Business Site</a>
                     </div>
                     <div class="wd-panel-image">
-                        <img src="{{ url_for('static', filename='images/services/business.png') }}" alt="Business Website" loading="lazy">
+                        <img src="{{ url_for('static', filename='images/services/business.png') }}" alt="Corporate Website Development and IT Solutions" loading="lazy">
                     </div>
                 </div>
 
@@ -187,7 +231,7 @@
                         <a href="{{ url_for('contact') }}" class="wd-btn wd-btn--primary">Showcase My Work</a>
                     </div>
                     <div class="wd-panel-image">
-                        <img src="https://images.unsplash.com/photo-1545235617-9465d2a55698?w=800&auto=format&fit=crop" alt="Portfolio Website" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1545235617-9465d2a55698?w=800&auto=format&fit=crop" alt="Creative Portfolio Web Design" loading="lazy">
                     </div>
                 </div>
 
@@ -205,7 +249,7 @@
                         <a href="{{ url_for('contact') }}" class="wd-btn wd-btn--primary">Build My Landing Page</a>
                     </div>
                     <div class="wd-panel-image">
-                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop" alt="Landing Page" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop" alt="High-Converting Landing Page Development" loading="lazy">
                     </div>
                 </div>
 
@@ -224,7 +268,7 @@
                         <a href="{{ url_for('contact') }}" class="wd-btn wd-btn--primary">Build My App</a>
                     </div>
                     <div class="wd-panel-image">
-                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop" alt="SaaS App" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop" alt="Custom SaaS Web Application Development" loading="lazy">
                     </div>
                 </div>
 
@@ -331,7 +375,7 @@
             <div class="wd-cms-visual wd-reveal-left">
                 <img 
                     src="{{ url_for('static', filename='images/services/system-domains.png') }}"
-                    alt="CMS and Platform Technologies"
+                    alt="Expert CMS and Custom Web Development Technologies"
                     class="wd-cms-img"
                 >
             </div>
@@ -339,7 +383,7 @@
             <!-- RIGHT — Text -->
             <div class="wd-cms-text wd-reveal-right">
                 <span class="wd-section-label">Every System Is Different</span>
-                <h2 class="wd-section-title">We Can Do Web Design<br>for Any CMS</h2>
+                <h2 class="wd-section-title">We Build Custom Web Solutions<br>on Any CMS</h2>
                 <p class="wd-cms-desc">
                     We are experts in web design and development for all common content management systems, from WordPress to Drupal, and can therefore recommend the CMS that best suits your requirements.
                 </p>
