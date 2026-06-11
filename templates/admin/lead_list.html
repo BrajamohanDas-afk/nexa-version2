@@ -1,0 +1,50 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Contact Leads</h1>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn-secondary">Dashboard</a>
+  </div>
+
+  {% if leads %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Received</th>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Subject</th>
+          <th>Message</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in leads %}
+          <tr>
+            <td>{{ lead.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+            <td>{{ lead.name }}</td>
+            <td>
+              <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+              {% if lead.phone %}
+                <div class="table-muted">{{ lead.phone }}</div>
+              {% endif %}
+            </td>
+            <td>{{ lead.subject }}</td>
+            <td class="lead-message">{{ lead.message }}</td>
+            <td>
+              {% if lead.email_sent %}
+                <span class="badge published">Sent</span>
+              {% else %}
+                <span class="badge draft" title="{{ lead.email_error or 'Email notification was not sent' }}">Saved</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No leads yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
