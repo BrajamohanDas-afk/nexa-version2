@@ -1,353 +1,350 @@
-
-
 {% extends '/layouts/base.html' %}
 
 {% block title %}About Us | Nexa Solutions{% endblock %}
 
+{% block meta %}
+<meta name="description" content="Learn about Nexa Solutions, a modern IT agency building secure, scalable websites, software products, automation systems, and AI-powered digital experiences.">
+<meta name="keywords" content="Nexa Solutions about, IT agency, web development team, software company, AI solutions, digital products">
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+<noscript>
+  <style>
+    .about-page .reveal {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+</noscript>
+{% endblock %}
+
 {% block content %}
 
-  
-  <!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
-  <section class="blog-page-hero">
-    <div class="blog-page-hero-inner">
-      <p class="blog-page-eyebrow">About Nexa</p>
-      <h1>ABOUT US</h1>
-      <p class="blog-page-sub">We are a team of engineers, designers, and strategists building scalable, secure digital products and AI-powered experiences that drive measurable business outcomes.</p>
-    </div>
-    <div class="nexa-text"> NEXA SOLUTIONS</div>
-    
-  </section>
-
-  <!-- ═══════════════════════════════ WHO WE ARE ═══════════════════════════════ -->
-  <section class="section who-we-are">
-    <div class="container two-col">
-      <div class="col-left reveal">
-        <p class="section-tag">Who We Are</p>
-        <h2 class="section-heading">Modern IT.<br>Real Results.</h2>
+<main class="about-page">
+  <!-- HERO SECTION -->
+  <section class="about-hero">
+    <div class="about-shell about-hero-grid">
+      <div class="about-hero-copy reveal">
+        <p class="sec-eyebrow">About Nexa Solutions</p>
+        <h1>Nexa Solutions</h1>
+        <p class="about-hero-lede">
+          We are a focused technology team building clean websites, scalable software, and intelligent digital systems for businesses that need dependable execution.
+        </p>
+        <div class="about-hero-actions">
+          <a href="{{ url_for('contact') }}" class="btn btn-primary">Start a Project</a>
+          <a href="#about-team" class="btn btn-secondary">Meet the Team</a>
+        </div>
       </div>
-      <div class="col-right reveal delay-1">
-        <p class="body-text">Nexa Solutions is a modern IT services company focused on building <strong>scalable, secure, and performance-driven</strong> digital solutions. From startups to growing enterprises, we help businesses transform ideas into reliable technology products.</p>
-        <div class="stat-row">
-          <div class="stat-item">
-            <span class="stat-number">50+</span>
-            <span class="stat-label">Projects Delivered</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">3+</span>
-            <span class="stat-label">Years of Excellence</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">20+</span>
-            <span class="stat-label">Global Clients</span>
-          </div>
+
+      <div class="about-hero-panel reveal" data-delay="120" aria-label="Nexa Solutions company profile">
+        <div class="about-mark-wrap">
+          <img src="{{ url_for('static', filename='images/logo/logo.png') }}" alt="Nexa Solutions logo" class="about-mark">
+        </div>
+        <div class="about-panel-content">
+          <span class="about-panel-label">Built with intent</span>
+          <p>Strategy, design, engineering, and long-term support under one practical delivery process.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════ MISSION / VISION ═══════════════════════════════ -->
-  <section class="section mvv">
-    <div class="container">
-      <div class="mvv-grid">
-        <div class="mvv-card reveal">
-          <div class="mvv-number">01</div>
-          <h3 class="mvv-title">Our Mission</h3>
-          <p class="mvv-text">To empower businesses with intelligent, future-ready digital solutions that improve efficiency and drive long-term growth.</p>
-          <div class="mvv-line"></div>
-        </div>
-        <div class="mvv-card reveal delay-1">
-          <div class="mvv-number">02</div>
-          <h3 class="mvv-title">Our Vision</h3>
-          <p class="mvv-text">To become a trusted global technology partner known for quality, innovation, and transparency.</p>
-          <div class="mvv-line"></div>
-        </div>
-        <div class="mvv-card reveal delay-2">
-          <div class="mvv-number">03</div>
-          <h3 class="mvv-title">Our Values</h3>
-          <p class="mvv-text">We focus on outcomes, not just code. Every solution we build carries purpose, precision, and a commitment to long-term partnership.</p>
-          <div class="mvv-line"></div>
+  <!-- WHO WE ARE SECTION -->
+  <section class="about-story">
+    <div class="about-shell about-story-grid">
+      <div class="sec-header about-section-heading about-section-heading-left reveal">
+        <p class="sec-eyebrow">Who We Are</p>
+        <h2>Modern IT.</h2>
+        <h2>Real Results.</h2>
+      </div>
+      <div class="about-story-copy reveal" data-delay="120">
+        <p>
+          Nexa Solutions partners with founders, growing companies, and operational teams that need software built with clarity. Our work covers websites, SaaS platforms, business systems, automation, and AI-powered product experiences.
+        </p>
+        <p>
+          We keep the process direct: understand the goal, design the right structure, build carefully, and support the product after launch.
+        </p>
+        <div class="about-stats" aria-label="Company highlights">
+          <div class="about-stat">
+            <strong>50+</strong>
+            <span>Projects delivered</span>
+          </div>
+          <div class="about-stat">
+            <strong>20+</strong>
+            <span>Client partnerships</span>
+          </div>
+          <div class="about-stat">
+            <strong>3+</strong>
+            <span>Years building</span>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════ VALUES / HOW WE ADD VALUE ═══════════════════════════════ -->
-  <section class="section values-section">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-tag">Our Value</p>
-        <h2 class="section-heading centered">How We Add Value<br>to IT Products</h2>
+  <!-- MISSION / VISION SECTION -->
+  <section class="about-pillars">
+    <div class="about-shell">
+      <div class="sec-header about-section-heading about-section-heading-center reveal">
+        <p class="sec-eyebrow">Mission and Vision</p>
+        <h2>Purpose with a practical path.</h2>
       </div>
-      <div class="values-marquee-wrap">
-        <div class="values-marquee">
+
+      <div class="about-pillar-list">
+        <article class="about-pillar reveal">
+          <span>01</span>
+          <h3>Mission</h3>
+          <p>Help businesses turn practical ideas into reliable digital products that improve efficiency, visibility, and growth.</p>
+        </article>
+        <article class="about-pillar reveal" data-delay="100">
+          <span>02</span>
+          <h3>Vision</h3>
+          <p>Become a trusted technology partner for companies that value clear communication, strong engineering, and long-term product thinking.</p>
+        </article>
+        <article class="about-pillar reveal" data-delay="200">
+          <span>03</span>
+          <h3>Promise</h3>
+          <p>Keep every solution secure, scalable, fast, and maintainable without overcomplicating the experience for the user.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUES / HOW WE ADD VALUE SECTION -->
+  <section class="about-values">
+    <div class="about-shell">
+      <div class="sec-header about-section-heading about-section-heading-center reveal">
+        <p class="sec-eyebrow">Values / How We Add Value</p>
+        <h2>Simple principles. Consistent delivery.</h2>
+      </div>
+
+      <div class="values-marquee-wrap reveal" tabindex="0" aria-label="Smart Architecture, Security First, High Performance, Scalable Systems, Business Focus, Long-term Support">
+        <div class="values-marquee" aria-hidden="true">
           <span class="marquee-item">Smart Architecture</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Security First</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">High Performance</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Scalable Systems</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Business Focus</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Long-term Support</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Smart Architecture</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Security First</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">High Performance</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Scalable Systems</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Business Focus</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
           <span class="marquee-item">Long-term Support</span>
-          <span class="marquee-sep">×</span>
+          <span class="marquee-sep">&times;</span>
         </div>
       </div>
-      <div class="values-grid">
-        <div class="value-card reveal">
-          <div class="value-label">01</div>
-          <h4>Smart Architecture</h4>
-          <p>Thoughtfully structured systems built to last and adapt.</p>
-          <div class="value-hover-bar"></div>
-        </div>
-        <div class="value-card reveal delay-1">
-          <div class="value-label">02</div>
-          <h4>Security First</h4>
-          <p>Every layer hardened — from database to deployment.</p>
-          <div class="value-hover-bar"></div>
-        </div>
-        <div class="value-card reveal delay-2">
-          <div class="value-label">03</div>
-          <h4>High Performance</h4>
-          <p>Optimized for speed, reliability, and real-world load.</p>
-          <div class="value-hover-bar"></div>
-        </div>
-        <div class="value-card reveal delay-3">
-          <div class="value-label">04</div>
-          <h4>Scalable Systems</h4>
-          <p>Architecture that grows seamlessly as your business expands.</p>
-          <div class="value-hover-bar"></div>
-        </div>
-        <div class="value-card reveal delay-4">
-          <div class="value-label">05</div>
-          <h4>Business Focus</h4>
-          <p>We align every technical decision with your business goals.</p>
-          <div class="value-hover-bar"></div>
-        </div>
-        <div class="value-card reveal delay-5">
-          <div class="value-label">06</div>
-          <h4>Long-term Support</h4>
-          <p>Partnerships beyond delivery — we stay with you.</p>
-          <div class="value-hover-bar"></div>
-        </div>
+
+      <div class="about-values-grid">
+        <article class="about-value-card reveal">
+          <span>01</span>
+          <h3>Smart Architecture</h3>
+          <p>Thoughtfully structured systems built to last, adapt, and support growth.</p>
+        </article>
+        <article class="about-value-card reveal" data-delay="80">
+          <span>02</span>
+          <h3>Security First</h3>
+          <p>Practical protection across data, access, deployment, and long-term maintenance.</p>
+        </article>
+        <article class="about-value-card reveal" data-delay="160">
+          <span>03</span>
+          <h3>High Performance</h3>
+          <p>Fast interfaces and stable systems designed for real users and real load.</p>
+        </article>
+        <article class="about-value-card reveal" data-delay="240">
+          <span>04</span>
+          <h3>Scalable Systems</h3>
+          <p>Products planned so they can grow without forcing a rebuild too early.</p>
+        </article>
+        <article class="about-value-card reveal" data-delay="320">
+          <span>05</span>
+          <h3>Business Focus</h3>
+          <p>Technical choices are tied to measurable business goals, not just code output.</p>
+        </article>
+        <article class="about-value-card reveal" data-delay="400">
+          <span>06</span>
+          <h3>Long-term Support</h3>
+          <p>We stay available after launch for improvements, fixes, and product growth.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════ JOURNEY / TIMELINE ═══════════════════════════════ -->
-  <section class="section journey-section">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-tag">Our Journey</p>
-        <h2 class="section-heading centered">Milestones That<br>Shaped Us</h2>
+  <!-- JOURNEY / TIMELINE SECTION -->
+  <section class="about-journey">
+    <div class="about-shell">
+      <div class="sec-header about-section-heading about-section-heading-center reveal">
+        <p class="sec-eyebrow">Journey / Timeline</p>
+        <h2>Milestones that shaped us.</h2>
       </div>
-      <div class="timeline">
-        <div class="timeline-item reveal">
-          <div class="timeline-year">2022</div>
-          <div class="timeline-connector">
-            <div class="timeline-dot"></div>
-            <div class="timeline-track"></div>
-          </div>
-          <div class="timeline-content">
-            <p>Started with freelance web &amp; backend development projects — laying the foundation of our craft.</p>
-          </div>
-        </div>
-        <div class="timeline-item reveal delay-1">
-          <div class="timeline-year">2023</div>
-          <div class="timeline-connector">
-            <div class="timeline-dot"></div>
-            <div class="timeline-track"></div>
-          </div>
-          <div class="timeline-content">
-            <p>Expanded into AI automation and cloud-based solutions — pushing beyond conventional boundaries.</p>
-          </div>
-        </div>
-        <div class="timeline-item reveal delay-2">
-          <div class="timeline-year">2024</div>
-          <div class="timeline-connector">
-            <div class="timeline-dot"></div>
-            <div class="timeline-track"></div>
-          </div>
-          <div class="timeline-content">
-            <p>Launched Nexa Solutions as a full-service IT agency — a team, a brand, a mission.</p>
-          </div>
-        </div>
-        <div class="timeline-item reveal delay-3">
-          <div class="timeline-year">2025</div>
-          <div class="timeline-connector">
-            <div class="timeline-dot active"></div>
-          </div>
-          <div class="timeline-content">
-            <p>Helping global clients build scalable digital products — and this is only the beginning.</p>
-          </div>
-        </div>
+
+      <div class="about-timeline">
+        <article class="about-timeline-item reveal">
+          <span class="about-timeline-year">2022</span>
+          <div class="about-timeline-marker" aria-hidden="true"></div>
+          <p>Started with focused web and backend development projects, building the foundation of our delivery process.</p>
+        </article>
+        <article class="about-timeline-item reveal" data-delay="100">
+          <span class="about-timeline-year">2023</span>
+          <div class="about-timeline-marker" aria-hidden="true"></div>
+          <p>Expanded into automation, cloud-based systems, and more complete product delivery for business clients.</p>
+        </article>
+        <article class="about-timeline-item reveal" data-delay="200">
+          <span class="about-timeline-year">2024</span>
+          <div class="about-timeline-marker" aria-hidden="true"></div>
+          <p>Launched Nexa Solutions as a full-service IT agency with a stronger brand, process, and client focus.</p>
+        </article>
+        <article class="about-timeline-item reveal" data-delay="300">
+          <span class="about-timeline-year">2025</span>
+          <div class="about-timeline-marker about-timeline-marker-active" aria-hidden="true"></div>
+          <p>Continued helping clients build scalable digital products, AI workflows, and long-term technology systems.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════ TEAM ═══════════════════════════════ -->
-  <section class="section team-section" id="team">
-    <div class="container">
-      <div class="section-header reveal">
-        <p class="section-tag">Our Team</p>
-        <h2 class="section-heading centered">People Behind<br>Nexa Solutions</h2>
-        <p class="section-sub">A collective of engineers, designers, and strategists building the future of digital.</p>
+  <!-- TEAM AND GRID SECTION -->
+  <section class="about-team" id="about-team">
+    <div class="about-shell">
+      <div class="sec-header about-section-heading about-section-heading-center reveal">
+        <p class="sec-eyebrow">Our Team</p>
+        <h2>The people behind Nexa.</h2>
+        <p class="about-section-sub">
+          A practical mix of engineering, design, sales, and delivery experience.
+        </p>
       </div>
 
-      <!-- FEATURED FOUNDERS -->
-      <div class="founders-row reveal">
-        <div class="founder-card">
-          <div class="founder-photo-wrap">
-            <div class="founder-photo" data-initials="SA"></div>
-            <div class="founder-photo-border"></div>
+      <div class="about-founder-grid">
+        <article class="about-founder reveal">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-founder-avatar" aria-hidden="true">
+          <div class="about-founder-body">
+            <p class="about-founder-role">Co-Founder and Lead Engineer</p>
+            <h3>Sadiq Ali</h3>
+            <p>Leads technical architecture, backend systems, and performance-focused engineering for web and software products.</p>
           </div>
-          <div class="founder-info">
-            <h3 class="founder-name">Sadiq Ali</h3>
-            <p class="founder-role">Co-Founder &amp; Lead Engineer</p>
-            <p class="founder-bio">Architecting scalable systems with a passion for performance-driven engineering and elegant backend solutions.</p>
+        </article>
+
+        <article class="about-founder reveal" data-delay="120">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-founder-avatar" aria-hidden="true">
+          <div class="about-founder-body">
+            <p class="about-founder-role">Co-Founder and Lead Sales Executive</p>
+            <h3>Abdul Bari</h3>
+            <p>Builds client relationships, shapes project direction, and aligns technology work with measurable business value.</p>
           </div>
-        </div>
-        <div class="founders-divider"></div>
-        <div class="founder-card">
-          <div class="founder-photo-wrap">
-            <div class="founder-photo" data-initials="AB"></div>
-            <div class="founder-photo-border"></div>
-          </div>
-          <div class="founder-info">
-            <h3 class="founder-name">Abdul Bari</h3>
-            <p class="founder-role">Co-Founder &amp; Lead Sales Executive</p>
-            <p class="founder-bio">Driving growth and building partnerships that turn great technology into real business value across markets.</p>
-          </div>
-        </div>
+        </article>
       </div>
 
-      <!-- TEAM GRID 3×4 -->
-      <p class="team-dept-label reveal">Extended Team</p>
-      <div class="team-grid">
-
-        <!-- Row 1 -->
-        <div class="team-card reveal">
-          <div class="team-photo" data-initials="SR"></div>
-          <div class="team-info">
-            <h4>Sarah Rahman</h4>
+      <p class="about-team-label reveal">Extended Team</p>
+      <div class="about-team-grid">
+        <article class="about-team-card reveal">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Sarah Rahman</h3>
             <p>UI/UX Lead</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-1">
-          <div class="team-photo" data-initials="KA"></div>
-          <div class="team-info">
-            <h4>Kamran Ali</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="60">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Kamran Ali</h3>
             <p>Backend Engineer</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-2">
-          <div class="team-photo" data-initials="ZH"></div>
-          <div class="team-info">
-            <h4>Zara Hussain</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="120">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Zara Hussain</h3>
             <p>Product Designer</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-3">
-          <div class="team-photo" data-initials="OB"></div>
-          <div class="team-info">
-            <h4>Omar Butt</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="180">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Omar Butt</h3>
             <p>Cloud Architect</p>
           </div>
-        </div>
-
-        <!-- Row 2 -->
-        <div class="team-card reveal">
-          <div class="team-photo" data-initials="FN"></div>
-          <div class="team-info">
-            <h4>Fatima Noor</h4>
+        </article>
+        <article class="about-team-card reveal">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Fatima Noor</h3>
             <p>AI/ML Engineer</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-1">
-          <div class="team-photo" data-initials="HM"></div>
-          <div class="team-info">
-            <h4>Hamza Malik</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="60">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Hamza Malik</h3>
             <p>Full Stack Developer</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-2">
-          <div class="team-photo" data-initials="AI"></div>
-          <div class="team-info">
-            <h4>Ayesha Iqbal</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="120">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Ayesha Iqbal</h3>
             <p>DevOps Engineer</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-3">
-          <div class="team-photo" data-initials="RK"></div>
-          <div class="team-info">
-            <h4>Raza Khan</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="180">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Raza Khan</h3>
             <p>Frontend Developer</p>
           </div>
-        </div>
-
-        <!-- Row 3 -->
-        <div class="team-card reveal">
-          <div class="team-photo" data-initials="MJ"></div>
-          <div class="team-info">
-            <h4>Maria Javed</h4>
+        </article>
+        <article class="about-team-card reveal">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Maria Javed</h3>
             <p>Project Manager</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-1">
-          <div class="team-photo" data-initials="BI"></div>
-          <div class="team-info">
-            <h4>Bilal Imran</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="60">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Bilal Imran</h3>
             <p>Security Specialist</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-2">
-          <div class="team-photo" data-initials="NA"></div>
-          <div class="team-info">
-            <h4>Nadia Arif</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="120">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Nadia Arif</h3>
             <p>Business Analyst</p>
           </div>
-        </div>
-        <div class="team-card reveal delay-3">
-          <div class="team-photo" data-initials="YS"></div>
-          <div class="team-info">
-            <h4>Yusuf Shah</h4>
+        </article>
+        <article class="about-team-card reveal" data-delay="180">
+          <img src="{{ url_for('static', filename='images/team/profile-placeholder.jpg') }}" alt="" class="about-team-avatar" aria-hidden="true">
+          <div class="about-team-card-body">
+            <h3>Yusuf Shah</h3>
             <p>Mobile Developer</p>
           </div>
-        </div>
-
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════ CTA ═══════════════════════════════ -->
-  <section class="section cta-section" id="contact">
-    <div class="cta-grain"></div>
-    <div class="container">
-      <div class="cta-inner reveal">
-        <p class="section-tag light">Let's Build Together</p>
-        <h2 class="cta-heading">Let's Build Something<br><em>Amazing</em></h2>
-        <p class="cta-sub">Ready to transform your idea into a powerful digital product?</p>
-        <a href="#" class="cta-btn">Contact Us Today</a>
-      </div>
+  <!-- CTA SECTION -->
+  <section class="about-cta">
+    <div class="about-shell about-cta-inner reveal">
+      <p class="sec-eyebrow">Let's Build Together</p>
+      <h2>Need a sharper digital product?</h2>
+      <p>Tell us what you are building. We will help you shape the right technical path and move it forward.</p>
+      <a href="{{ url_for('contact') }}" class="btn btn-primary about-cta-btn">Contact Us</a>
     </div>
-    <div class="cta-big-text">NEXA</div>
   </section>
-
-  
-
-  
+</main>
 
 {% endblock %}
