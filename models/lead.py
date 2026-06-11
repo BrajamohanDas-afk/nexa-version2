@@ -16,12 +16,12 @@ class ContactLead(db.Model):
     message = Column(Text, nullable=False)
     email_sent = Column(Boolean, nullable=False, default=False)
     email_error = Column(Text)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=datetime.now,
+        onupdate=datetime.now,
     )
 
     __table_args__ = (
