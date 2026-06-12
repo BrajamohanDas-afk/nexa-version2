@@ -1,0 +1,100 @@
+.about-values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--about-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.values-marquee-wrap {
+  overflow: hidden;
+  margin-bottom: 44px;
+  padding: 1.05rem 0;
+  border-top: 1px solid var(--about-line);
+  border-bottom: 1px solid var(--about-line);
+  background: var(--about-soft);
+}
+
+.values-marquee {
+  display: flex;
+  width: max-content;
+  white-space: nowrap;
+  animation: aboutMarqueeScroll 20s linear infinite;
+}
+
+.values-marquee-wrap:hover .values-marquee,
+.values-marquee-wrap:focus .values-marquee,
+.values-marquee-wrap:focus-within .values-marquee {
+  animation-play-state: paused;
+}
+
+.values-marquee-wrap:focus {
+  outline: 2px solid var(--about-black);
+  outline-offset: 4px;
+}
+
+.marquee-item {
+  color: var(--about-muted);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  padding: 0 1.6rem;
+}
+
+.marquee-sep {
+  color: rgba(8, 8, 8, 0.22);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+@keyframes aboutMarqueeScroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.about-value-card {
+  position: relative;
+  min-height: 220px;
+  padding: 30px;
+  border-right: 1px solid var(--about-line);
+  border-bottom: 1px solid var(--about-line);
+  background: var(--about-white);
+  overflow: hidden;
+}
+
+.about-value-card:nth-child(3n) {
+  border-right: 0;
+}
+
+.about-value-card:nth-child(n + 4) {
+  border-bottom: 0;
+}
+
+.about-value-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: var(--about-black);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.24s ease;
+}
+
+.about-value-card:hover::after {
+  transform: scaleX(1);
+}
+
+.about-value-card span {
+  color: var(--about-accent);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.45rem;
+  line-height: 1;
+}
