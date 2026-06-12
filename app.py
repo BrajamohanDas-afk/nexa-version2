@@ -8,13 +8,13 @@ from flask_login import (
     current_user
 )
 from admin.routes import admin_bp
-from models import BlogPost, Category
+from models import BlogPost, Category, ContactLead, ensure_contact_leads_table
 import os
 import math
 import re
 import uuid
 from datetime import datetime
-from sqlalchemy.exc import ProgrammingError, OperationalError
+from sqlalchemy.exc import ProgrammingError, OperationalError, SQLAlchemyError
 
 load_dotenv()
 
@@ -25,10 +25,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.secret_key = os.getenv("SECRET_KEY", "change-this")
 
 # ================= MAIL CONFIG =================
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USE_SSL"] = False
+app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", "587"))
+app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
+app.config["MAIL_USE_SSL"] = os.getenv("MAIL_USE_SSL", "False").lower() == "true"
 app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")  
 app.config["MAIL_PASSWORD"] = (os.getenv("MAIL_PASSWORD") or "").replace(" ", "")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")  # Just the email, not tuple
@@ -343,12 +343,25 @@ def contact():
             "name": request.form.get("name", "").strip(),
             "email": request.form.get("email", "").strip(),
             "phone": request.form.get("phone", "").strip(),
-            "subject": request.form.get("subject", "").strip() or "New Contact Form",
+            "subject": request.form.get("subject", "").strip()
+            or request.form.get("service", "").strip()
+            or "New Contact Form",
             "message": request.form.get("message", "").strip(),
         }
 
-        if not all([data["name"], data["email"], data["phone"], data["message"]]):
+        if not all([data["name"], data["email"], data["message"]]) or "@" not in data["email"]:
             flash("Please fill all required fields.", "error")
+            return redirect(url_for("contact"))
+
+        try:
+            ensure_contact_leads_table()
+            lead = ContactLead(**data)
+            db.session.add(lead)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            app.logger.error("Contact lead save error: %s", e)
+            flash("Sorry, there was a problem saving your message. Please try again or email us directly.", "error")
             return redirect(url_for("contact"))
 
         try:
@@ -361,7 +374,7 @@ def contact():
                 body=(
                     f"Name:    {data['name']}\n"
                     f"Email:   {data['email']}\n"
-                    f"Phone:   {data['phone']}\n"
+                    f"Phone:   {data['phone'] or 'Not provided'}\n"
                     f"Subject: {data['subject']}\n\n"
                     f"Message:\n{data['message']}\n\n"
                     f"Sent from: {request.host_url}contact\n"
@@ -369,10 +382,19 @@ def contact():
                 ),
             )
             mail.send(msg)
-            flash("Your message has been sent successfully. We'll get back to you soon!", "success")
+            lead.email_sent = True
+            lead.email_error = None
+            db.session.commit()
         except Exception as e:
+            db.session.rollback()
             app.logger.error("Contact form mail error: %s", e)
-            flash("Sorry, there was a problem sending your message. Please try again or email us directly.", "error")
+            lead = db.session.get(ContactLead, lead.id)
+            if lead:
+                lead.email_sent = False
+                lead.email_error = str(e)[:1000]
+                db.session.commit()
+
+        flash("Your message has been received. We'll get back to you soon!", "success")
 
         return redirect(url_for("contact"))
 

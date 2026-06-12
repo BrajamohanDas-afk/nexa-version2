@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <form class="contact-form reveal" data-delay="150" id="contactForm" novalidate>
+    <form action="{{ url_for('contact') }}" method="POST" class="contact-form reveal" data-delay="150" id="contactForm">
       <div class="form-row">
         <div class="form-group">
           <label for="cf-name">Your Name</label>
@@ -33,7 +33,7 @@
       </div>
       <div class="form-group">
         <label for="cf-service">Service Interested In</label>
-        <select id="cf-service" name="service">
+        <select id="cf-service" name="subject">
           <option value="" disabled selected>Select a service&hellip;</option>
           <option value="web">Web Development</option>
           <option value="mobile">Mobile App</option>
@@ -43,6 +43,10 @@
           <option value="automation">Automation</option>
           <option value="other">Other</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label for="cf-phone">Phone Number</label>
+        <input type="tel" id="cf-phone" name="phone" placeholder="+91 80773 13241" autocomplete="tel">
       </div>
       <div class="form-group">
         <label for="cf-message">Tell Us About Your Project</label>

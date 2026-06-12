@@ -9,11 +9,14 @@ from .blog import (
     BlogPost,
     Category
 )
+from .lead import ContactLead, ensure_contact_leads_table
 
 __all__ = [
     "db",
     "BlogPost",
-    "Category"
+    "Category",
+    "ContactLead",
+    "ensure_contact_leads_table"
 ]
 
 # ============================

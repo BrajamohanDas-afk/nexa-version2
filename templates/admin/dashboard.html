@@ -14,12 +14,57 @@
       <h3>Categories</h3>
       <p>{{ category_count }}</p>
     </div>
+    <div class="stat-card">
+      <h3>Leads</h3>
+      <p>{{ lead_count }}</p>
+    </div>
   </div>
 
   <div class="dashboard-actions">
     <a href="{{ url_for('admin.blog_list') }}" class="btn-primary">Manage Blogs</a>
     <a href="{{ url_for('admin.manage_categories') }}" class="btn-secondary">Manage Categories</a>
+    <a href="{{ url_for('admin.lead_list') }}" class="btn-secondary">View Leads</a>
     <a href="{{ url_for('admin.logout') }}" class="btn-danger">Logout</a>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Recent Leads</h2>
+      <a href="{{ url_for('admin.lead_list') }}">View all</a>
+    </div>
+
+    {% if recent_leads %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Subject</th>
+            <th>Received</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in recent_leads %}
+            <tr>
+              <td>{{ lead.name }}</td>
+              <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
+              <td>{{ lead.subject }}</td>
+              <td>{{ lead.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+              <td>
+                {% if lead.email_sent %}
+                  <span class="badge published">Sent</span>
+                {% else %}
+                  <span class="badge draft">Saved</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No leads yet.</p>
+    {% endif %}
   </div>
 
 </div>

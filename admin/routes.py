@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required
-from models import BlogPost, Category, upload_blog_image
+from models import BlogPost, Category, ContactLead, ensure_contact_leads_table, upload_blog_image
 from .forms import BlogForm
 from .utils import generate_unique_slug
 import re
@@ -42,11 +42,22 @@ def logout():
 @admin_bp.route("/")
 @login_required
 def dashboard():
+    ensure_contact_leads_table()
     return render_template(
         "admin/dashboard.html",
         blog_count=BlogPost.query.count(),
-        category_count=Category.query.count()
+        category_count=Category.query.count(),
+        lead_count=ContactLead.query.count(),
+        recent_leads=ContactLead.query.order_by(ContactLead.created_at.desc()).limit(5).all()
     )
+
+
+@admin_bp.route("/leads")
+@login_required
+def lead_list():
+    ensure_contact_leads_table()
+    leads = ContactLead.query.order_by(ContactLead.created_at.desc()).all()
+    return render_template("admin/lead_list.html", leads=leads)
 
 # ============================
 # BLOG LIST

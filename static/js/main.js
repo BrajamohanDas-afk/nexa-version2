@@ -344,6 +344,10 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 const contactForm = document.getElementById('contactForm');
 if (contactForm) {
   contactForm.addEventListener('submit', (e) => {
+    if (contactForm.getAttribute('action')) {
+      return;
+    }
+
     e.preventDefault();
     const btn = contactForm.querySelector('.contact-submit');
     const original = btn.innerHTML;
