@@ -9,13 +9,27 @@ from .blog import (
     BlogPost,
     Category
 )
+from .employee import Employee
+from .attendance import (
+    AttendanceRecord,
+    date_bounds,
+    ensure_attendance_tables,
+    format_duration,
+    seconds_on_date,
+)
 from .lead import ContactLead, ensure_contact_leads_table
 
 __all__ = [
     "db",
     "BlogPost",
     "Category",
+    "Employee",
+    "AttendanceRecord",
     "ContactLead",
+    "date_bounds",
+    "ensure_attendance_tables",
+    "format_duration",
+    "seconds_on_date",
     "ensure_contact_leads_table"
 ]
 

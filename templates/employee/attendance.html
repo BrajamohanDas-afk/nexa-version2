@@ -1,0 +1,45 @@
+{% extends "layouts/base_employee.html" %}
+
+{% block title %}Attendance History | Nexa Solutions{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Attendance History</h1>
+    <a href="{{ url_for('employee.dashboard') }}" class="btn-secondary">Back to Dashboard</a>
+  </div>
+
+  {% if records %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Check In</th>
+          <th>Check Out</th>
+          <th>Status</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+          <tr>
+            <td>{{ record.attendance_date.strftime("%d %b %Y") }}</td>
+            <td>{{ record.check_in_at.strftime("%H:%M") }}</td>
+            <td>{{ record.check_out_at.strftime("%H:%M") if record.check_out_at else "Active" }}</td>
+            <td>
+              {% if record.is_open %}
+                <span class="badge published">Online</span>
+              {% else %}
+                <span class="badge draft">Checked Out</span>
+              {% endif %}
+            </td>
+            <td>{{ record.duration_label }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No attendance records yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

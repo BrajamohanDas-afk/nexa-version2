@@ -192,6 +192,7 @@ input[type="email"],
 input[type="url"],
 input[type="number"],
 input[type="password"],
+input[type="date"],
 select,
 textarea {
   display: block;
@@ -215,6 +216,7 @@ input[type="email"]:focus,
 input[type="url"]:focus,
 input[type="number"]:focus,
 input[type="password"]:focus,
+input[type="date"]:focus,
 select:focus,
 textarea:focus {
   border-color: var(--admin-blue);
@@ -380,6 +382,16 @@ button[type="submit"] {
   line-height: 1;
 }
 
+.stat-card .employee-stat-text {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.employee-auth-container {
+  max-width: 520px;
+  margin: 3rem auto 0;
+}
+
 .dashboard-actions {
   display: flex;
   gap: 0.85rem;
@@ -394,6 +406,32 @@ button[type="submit"] {
 .admin-section h2 {
   font-size: 1.35rem;
   margin: 0;
+}
+
+.attendance-panel {
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.filter-form {
+  margin-bottom: 2rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(160px, 1fr)) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding-bottom: 1.4rem;
 }
 
 /* ── Admin Table ── */
@@ -777,6 +815,14 @@ button[type="submit"] {
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    padding-bottom: 0;
   }
 
   #editor-container {

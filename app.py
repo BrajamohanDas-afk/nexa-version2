@@ -8,7 +8,8 @@ from flask_login import (
     current_user
 )
 from admin.routes import admin_bp
-from models import BlogPost, Category, ContactLead, ensure_contact_leads_table
+from employee.routes import EmployeeSessionUser, employee_bp
+from models import BlogPost, Category, ContactLead, Employee, ensure_contact_leads_table
 import os
 import math
 import re
@@ -42,16 +43,31 @@ login_manager.login_view = "admin.login"
 login_manager.init_app(app)
 
 class AdminUser(UserMixin):
-    id = 1  # single admin user
+    id = "admin:1"  # single admin user
+    is_admin = True
 
 @login_manager.user_loader
 def load_user(user_id):
-    return AdminUser()
+    if user_id == "admin:1" or user_id == "1":
+        return AdminUser()
+
+    if user_id and user_id.startswith("employee:"):
+        try:
+            employee_id = int(user_id.split(":", 1)[1])
+        except (IndexError, ValueError):
+            return None
+
+        employee = db.session.get(Employee, employee_id)
+        if employee:
+            return EmployeeSessionUser(employee)
+
+    return None
 
 # ============================
 # REGISTER BLUEPRINT
 # ============================
 app.register_blueprint(admin_bp)
+app.register_blueprint(employee_bp)
 
 # ============================
 # DB INIT
