@@ -1,0 +1,73 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+
+  <div class="admin-header">
+    <h1>Employees</h1>
+    <a href="{{ url_for('admin.create_employee') }}" class="btn-primary">+ New Employee</a>
+  </div>
+
+  {% if employees %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Login</th>
+          <th>Role</th>
+          <th>Validity</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for employee in employees %}
+          <tr>
+            <td>
+              {{ employee.full_name }}
+              {% if employee.phone %}
+                <div class="table-muted">{{ employee.phone }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {{ employee.username }}
+              <div class="table-muted">{{ employee.email }}</div>
+            </td>
+            <td>
+              {{ employee.role or "Not set" }}
+              {% if employee.department %}
+                <div class="table-muted">{{ employee.department }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {{ employee.account_start_date.strftime("%d %b %Y") }}
+              <div class="table-muted">
+                Until {{ employee.account_expiry_date.strftime("%d %b %Y") if employee.account_expiry_date else "No expiry" }}
+              </div>
+            </td>
+            <td>
+              {% if employee.account_status_label == "Active" %}
+                <span class="badge published">Active</span>
+              {% else %}
+                <span class="badge draft">{{ employee.account_status_label }}</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}">Edit</a>
+              <form method="POST"
+                    action="{{ url_for('admin.delete_employee', employee_id=employee.id) }}"
+                    onsubmit="return confirm('Delete this employee account?');"
+                    style="display:inline;">
+                <button type="submit" class="link-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No employees yet. <a href="{{ url_for('admin.create_employee') }}">Create the first one.</a></p>
+  {% endif %}
+
+</div>
+{% endblock %}

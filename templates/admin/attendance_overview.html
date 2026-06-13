@@ -1,0 +1,51 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Attendance</h1>
+    <a href="{{ url_for('admin.attendance_reports') }}" class="btn-primary">Reports</a>
+  </div>
+
+  {% if attendance_rows %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Status</th>
+          <th>Latest Check In</th>
+          <th>Latest Check Out</th>
+          <th>Today Total</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in attendance_rows %}
+          {% set record = row.latest_record %}
+          <tr>
+            <td>
+              {{ row.employee.full_name }}
+              <div class="table-muted">{{ row.employee.role or "No role" }}</div>
+            </td>
+            <td>
+              {% if record and record.is_open %}
+                <span class="badge published">Online</span>
+              {% else %}
+                <span class="badge draft">Offline</span>
+              {% endif %}
+            </td>
+            <td>{{ record.check_in_at.strftime("%d %b %Y, %H:%M") if record else "No record" }}</td>
+            <td>{{ record.check_out_at.strftime("%d %b %Y, %H:%M") if record and record.check_out_at else "Active" if record and record.is_open else "No record" }}</td>
+            <td>{{ row.today_total }}</td>
+            <td>
+              <a href="{{ url_for('admin.attendance_reports', employee_id=row.employee.id) }}">View report</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No employees found. Create an employee account before tracking attendance.</p>
+  {% endif %}
+</div>
+{% endblock %}

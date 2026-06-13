@@ -15,12 +15,37 @@
       <p>{{ category_count }}</p>
     </div>
     <div class="stat-card">
+      <h3>Employees</h3>
+      <p>{{ employee_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Active Employees</h3>
+      <p>{{ active_employee_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Online Now</h3>
+      <p>{{ online_employee_count }}</p>
+      <div class="table-muted">Currently punched in</div>
+    </div>
+    <div class="stat-card">
+      <h3>Employees Checked Out</h3>
+      <p>{{ checked_out_today_count }}</p>
+      <div class="table-muted">At least one punch out today</div>
+    </div>
+    <div class="stat-card">
+      <h3>Tracked Hours Today</h3>
+      <p class="employee-stat-text">{{ today_total_hours }}</p>
+      <div class="table-muted">Includes active sessions</div>
+    </div>
+    <div class="stat-card">
       <h3>Leads</h3>
       <p>{{ lead_count }}</p>
     </div>
   </div>
 
   <div class="dashboard-actions">
+    <a href="{{ url_for('admin.employee_list') }}" class="btn-primary">Manage Employees</a>
+    <a href="{{ url_for('admin.attendance_overview') }}" class="btn-primary">View Attendance</a>
     <a href="{{ url_for('admin.blog_list') }}" class="btn-primary">Manage Blogs</a>
     <a href="{{ url_for('admin.manage_categories') }}" class="btn-secondary">Manage Categories</a>
     <a href="{{ url_for('admin.lead_list') }}" class="btn-secondary">View Leads</a>

@@ -1,0 +1,122 @@
+{% extends "layouts/base_employee.html" %}
+
+{% block title %}Employee Dashboard | Nexa Solutions{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Dashboard</h1>
+    <span class="badge published">{{ employee.account_status_label }}</span>
+  </div>
+
+  <div class="dashboard-stats">
+    <div class="stat-card">
+      <h3>Name</h3>
+      <p class="employee-stat-text">{{ employee.full_name }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Role</h3>
+      <p class="employee-stat-text">{{ employee.role or "Not set" }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Department</h3>
+      <p class="employee-stat-text">{{ employee.department or "Not set" }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Today</h3>
+      <p class="employee-stat-text">{{ "Online" if open_attendance else "Offline" }}</p>
+      <div class="table-muted">{{ today_total_hours }} tracked today</div>
+    </div>
+  </div>
+
+  <div class="admin-section attendance-panel">
+    <div class="admin-header">
+      <h2>Attendance</h2>
+      <a href="{{ url_for('employee.attendance_history') }}">View history</a>
+    </div>
+
+    {% if open_attendance %}
+      <p class="table-muted">
+        Punched in at {{ open_attendance.check_in_at.strftime("%d %b %Y, %H:%M") }}.
+        Current session: {{ open_attendance.duration_label }}.
+      </p>
+      <form method="POST" action="{{ url_for('employee.punch_out') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+        {{ punch_form.hidden_tag() }}
+        <button type="submit" class="btn-danger">Punch Out</button>
+      </form>
+    {% else %}
+      <p class="table-muted">You are currently offline.</p>
+      <form method="POST" action="{{ url_for('employee.punch_in') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+        {{ punch_form.hidden_tag() }}
+        <button type="submit" class="btn-primary">Punch In</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <table class="admin-table">
+    <tbody>
+      <tr>
+        <th>Email</th>
+        <td>{{ employee.email }}</td>
+      </tr>
+      <tr>
+        <th>Username</th>
+        <td>{{ employee.username }}</td>
+      </tr>
+      <tr>
+        <th>Phone</th>
+        <td>{{ employee.phone or "Not set" }}</td>
+      </tr>
+      <tr>
+        <th>Assigned Project</th>
+        <td>{{ employee.assigned_project_name or "Not assigned" }}</td>
+      </tr>
+      <tr>
+        <th>Account Start</th>
+        <td>{{ employee.account_start_date.strftime("%d %b %Y") }}</td>
+      </tr>
+      <tr>
+        <th>Account Expiry</th>
+        <td>{{ employee.account_expiry_date.strftime("%d %b %Y") if employee.account_expiry_date else "No expiry" }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Today&apos;s Records</h2>
+    </div>
+
+    {% if today_records %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Status</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in today_records %}
+            <tr>
+              <td>{{ record.check_in_at.strftime("%H:%M") }}</td>
+              <td>{{ record.check_out_at.strftime("%H:%M") if record.check_out_at else "Active" }}</td>
+              <td>
+                {% if record.is_open %}
+                  <span class="badge published">Online</span>
+                {% else %}
+                  <span class="badge draft">Checked Out</span>
+                {% endif %}
+              </td>
+              <td>{{ record.duration_label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No attendance recorded today. Punch in to start tracking.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
