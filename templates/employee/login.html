@@ -7,13 +7,17 @@
   <h1>Employee Login</h1>
 
   <form method="POST">
-    <label for="identifier">Username or Email</label>
-    <input type="text" id="identifier" name="identifier" class="input" required autocomplete="username">
+    {{ form.hidden_tag() }}
 
-    <label for="password">Password</label>
-    <input type="password" id="password" name="password" class="input" required autocomplete="current-password">
+    {{ form.identifier.label }}
+    {{ form.identifier(class="input", autocomplete="username") }}
+    {% for error in form.identifier.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
 
-    <button type="submit" class="btn-primary">Login</button>
+    {{ form.password.label }}
+    {{ form.password(class="input", autocomplete="current-password") }}
+    {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+
+    {{ form.submit(class="btn-primary") }}
   </form>
 </div>
 {% endblock %}

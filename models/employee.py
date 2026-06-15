@@ -35,6 +35,11 @@ class Employee(db.Model):
         back_populates="employee",
         cascade="all, delete-orphan",
     )
+    projects = relationship(
+        "Project",
+        secondary="project_employees",
+        back_populates="team_members",
+    )
 
     __table_args__ = (
         Index("idx_employee_account_dates", "account_start_date", "account_expiry_date"),

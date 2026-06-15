@@ -68,8 +68,14 @@
         <td>{{ employee.phone or "Not set" }}</td>
       </tr>
       <tr>
-        <th>Assigned Project</th>
-        <td>{{ employee.assigned_project_name or "Not assigned" }}</td>
+        <th>Assigned Projects</th>
+        <td>
+          {% if employee.projects %}
+            {{ employee.projects|map(attribute='name')|join(', ') }}
+          {% else %}
+            {{ employee.assigned_project_name or "Not assigned" }}
+          {% endif %}
+        </td>
       </tr>
       <tr>
         <th>Account Start</th>

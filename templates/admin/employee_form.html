@@ -61,9 +61,10 @@
       </div>
 
       <div class="form-group form-grid-full">
-        {{ form.assigned_project_name.label }}
-        {{ form.assigned_project_name(class="input", placeholder="Optional until project management phase") }}
-        {% for error in form.assigned_project_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        {{ form.project_ids.label }}
+        {{ form.project_ids(class="input multi-select") }}
+        <div class="table-muted">Hold Ctrl or Cmd to assign the employee to multiple projects.</div>
+        {% for error in form.project_ids.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group">

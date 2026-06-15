@@ -434,6 +434,20 @@ button[type="submit"] {
   padding-bottom: 1.4rem;
 }
 
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+.project-form-grid {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.multi-select {
+  min-height: 140px;
+  background-image: none;
+  padding-right: 1rem;
+}
+
 /* ── Admin Table ── */
 .admin-table {
   width: 100%;
