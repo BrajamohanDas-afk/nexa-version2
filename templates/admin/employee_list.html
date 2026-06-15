@@ -58,6 +58,7 @@
                     action="{{ url_for('admin.delete_employee', employee_id=employee.id) }}"
                     onsubmit="return confirm('Delete this employee account?');"
                     style="display:inline;">
+                {{ delete_form.hidden_tag() }}
                 <button type="submit" class="link-danger">Delete</button>
               </form>
             </td>

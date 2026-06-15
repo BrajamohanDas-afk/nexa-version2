@@ -14,16 +14,47 @@ import os
 import math
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.exc import ProgrammingError, OperationalError, SQLAlchemyError
 
 load_dotenv()
 
 app = Flask(__name__)
 
+
+def is_production():
+    return os.getenv("FLASK_ENV") == "production" or os.getenv("APP_ENV") == "production"
+
+
+def env_flag(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+secret_key = os.getenv("SECRET_KEY")
+if is_production() and not secret_key:
+    raise RuntimeError("SECRET_KEY must be set in production.")
+
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = os.getenv("SECRET_KEY", "change-this")
+app.secret_key = secret_key or "dev-only-secret-key-change-before-production"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = env_flag("SESSION_COOKIE_SECURE", is_production())
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
+app.config["MAX_FORM_MEMORY_SIZE"] = int(os.getenv("MAX_FORM_MEMORY_SIZE", str(1024 * 1024)))
+app.config["MAX_FORM_PARTS"] = int(os.getenv("MAX_FORM_PARTS", "100"))
+
+trusted_hosts = os.getenv("TRUSTED_HOSTS", "").strip()
+if trusted_hosts:
+    app.config["TRUSTED_HOSTS"] = [
+        host.strip()
+        for host in trusted_hosts.split(",")
+        if host.strip()
+    ]
 
 # ================= MAIL CONFIG =================
 app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "smtp.gmail.com")
@@ -34,6 +65,15 @@ app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = (os.getenv("MAIL_PASSWORD") or "").replace(" ", "")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")  # Just the email, not tuple
 mail.init_app(app)
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    return response
 
 # ============================
 # FLASK-LOGIN SETUP
@@ -502,5 +542,5 @@ def robots():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=env_flag("FLASK_DEBUG", False))
 

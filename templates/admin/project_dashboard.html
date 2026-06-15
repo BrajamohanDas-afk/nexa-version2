@@ -1,0 +1,62 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Project Dashboard</h1>
+    <div class="dashboard-actions" style="margin-bottom: 0;">
+      <a href="{{ url_for('admin.project_list') }}" class="btn-secondary">Projects</a>
+      <a href="{{ url_for('admin.create_project') }}" class="btn-primary">+ New Project</a>
+    </div>
+  </div>
+
+  <div class="dashboard-stats">
+    <div class="stat-card"><h3>Total Projects</h3><p>{{ total_projects }}</p></div>
+    <div class="stat-card"><h3>Active</h3><p>{{ active_projects }}</p></div>
+    <div class="stat-card"><h3>Completed</h3><p>{{ completed_projects }}</p></div>
+    <div class="stat-card"><h3>On Hold</h3><p>{{ on_hold_projects }}</p></div>
+    <div class="stat-card"><h3>Cancelled</h3><p>{{ cancelled_projects }}</p></div>
+    <div class="stat-card"><h3>Awaiting Payment</h3><p>{{ awaiting_payment_count }}</p></div>
+    <div class="stat-card"><h3>Completed Pending</h3><p>{{ completed_pending_count }}</p></div>
+    <div class="stat-card"><h3>This Month</h3><p>{{ monthly_projects }}</p></div>
+    <div class="stat-card"><h3>Total Value</h3><p class="employee-stat-text">{{ total_value }}</p></div>
+    <div class="stat-card"><h3>Collected</h3><p class="employee-stat-text">{{ collected_amount }}</p></div>
+    <div class="stat-card"><h3>Outstanding</h3><p class="employee-stat-text">{{ outstanding_amount }}</p></div>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Recent Projects</h2>
+      <a href="{{ url_for('admin.project_list') }}">View all</a>
+    </div>
+
+    {% if recent_projects %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Remaining</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in recent_projects %}
+            <tr>
+              <td>
+                <a href="{{ url_for('admin.project_detail', project_id=project.id) }}">{{ project.name }}</a>
+                <div class="table-muted">{{ project.client_name }}</div>
+              </td>
+              <td><span class="badge draft">{{ project.status_label }}</span></td>
+              <td><span class="badge draft">{{ project.payment_status_label }}</span></td>
+              <td>{{ project.remaining_amount_label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No projects yet. <a href="{{ url_for('admin.create_project') }}">Create the first project.</a></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

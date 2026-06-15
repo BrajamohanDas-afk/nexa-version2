@@ -41,11 +41,29 @@
       <h3>Leads</h3>
       <p>{{ lead_count }}</p>
     </div>
+    <div class="stat-card">
+      <h3>Projects</h3>
+      <p>{{ project_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Active Projects</h3>
+      <p>{{ active_project_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Completed Projects</h3>
+      <p>{{ completed_project_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Outstanding</h3>
+      <p class="employee-stat-text">{{ outstanding_amount }}</p>
+    </div>
   </div>
 
   <div class="dashboard-actions">
     <a href="{{ url_for('admin.employee_list') }}" class="btn-primary">Manage Employees</a>
     <a href="{{ url_for('admin.attendance_overview') }}" class="btn-primary">View Attendance</a>
+    <a href="{{ url_for('admin.project_list') }}" class="btn-primary">Manage Projects</a>
+    <a href="{{ url_for('admin.project_dashboard') }}" class="btn-secondary">Project Dashboard</a>
     <a href="{{ url_for('admin.blog_list') }}" class="btn-primary">Manage Blogs</a>
     <a href="{{ url_for('admin.manage_categories') }}" class="btn-secondary">Manage Categories</a>
     <a href="{{ url_for('admin.lead_list') }}" class="btn-secondary">View Leads</a>

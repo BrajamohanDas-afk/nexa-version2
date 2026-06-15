@@ -1,0 +1,118 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <div>
+      <h1>{{ project.name }}</h1>
+      <div class="table-muted">{{ project.client_name }}</div>
+    </div>
+    <div class="dashboard-actions" style="margin-bottom: 0;">
+      <a href="{{ url_for('admin.edit_project', project_id=project.id) }}" class="btn-primary">Edit</a>
+      <a href="{{ url_for('admin.project_list') }}" class="btn-secondary">Back</a>
+    </div>
+  </div>
+
+  <div class="dashboard-stats">
+    <div class="stat-card">
+      <h3>Status</h3>
+      <p class="employee-stat-text">{{ project.status_label }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Value</h3>
+      <p class="employee-stat-text">{{ project.total_value_label }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Advance Received</h3>
+      <p class="employee-stat-text">{{ project.advance_received_label }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Remaining</h3>
+      <p class="employee-stat-text">{{ project.remaining_amount_label }}</p>
+      <div class="table-muted">{{ project.payment_status_label }}</div>
+    </div>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header"><h2>Project Details</h2></div>
+    <table class="admin-table">
+      <tbody>
+        <tr>
+          <th>Start Date</th>
+          <td>{{ project.start_date.strftime("%d %b %Y") }}</td>
+        </tr>
+        <tr>
+          <th>Expected End</th>
+          <td>{{ project.expected_end_date.strftime("%d %b %Y") if project.expected_end_date else "Not set" }}</td>
+        </tr>
+        <tr>
+          <th>Description</th>
+          <td>{{ project.description or "No description" }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header"><h2>Team</h2></div>
+    {% if project.team_members %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for employee in project.team_members %}
+            <tr>
+              <td>{{ employee.full_name }}</td>
+              <td>{{ employee.role or "Not set" }}</td>
+              <td><a href="mailto:{{ employee.email }}">{{ employee.email }}</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No employees assigned yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header"><h2>Documents</h2></div>
+    {% if project.documents %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>Type</th>
+            <th>Uploaded</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for document in project.documents %}
+            <tr>
+              <td><a href="{{ url_for('admin.download_project_document', project_id=project.id, document_id=document.id) }}" target="_blank" rel="noopener noreferrer">{{ document.file_name }}</a></td>
+              <td>{{ document.document_type|replace("_", " ")|title }}</td>
+              <td>{{ document.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+              <td>
+                <form method="POST"
+                      action="{{ url_for('admin.delete_project_document', project_id=project.id, document_id=document.id) }}"
+                      onsubmit="return confirm('Remove this document?');"
+                      style="display:inline;">
+                  {{ delete_form.hidden_tag() }}
+                  <button type="submit" class="link-danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No documents uploaded yet. Edit the project to attach one.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from functools import wraps
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for, session
 from flask_login import current_user, login_user, logout_user
 from sqlalchemy import or_
 
@@ -12,10 +12,12 @@ from models import (
     Employee,
     date_bounds,
     ensure_attendance_tables,
+    ensure_project_tables,
     format_duration,
     seconds_on_date,
 )
-from .forms import PunchForm
+from .forms import EmployeeLoginForm, PunchForm
+from security_utils import employee_ip_login_limiter, employee_login_limiter, login_ip_key, login_rate_key
 
 
 employee_bp = Blueprint("employee", __name__, url_prefix="/employee")
@@ -95,9 +97,17 @@ def login():
     if getattr(current_user, "employee", None):
         return redirect(url_for("employee.dashboard"))
 
-    if request.method == "POST":
-        identifier = request.form.get("identifier", "").strip()
-        password = request.form.get("password", "")
+    form = EmployeeLoginForm()
+
+    if form.validate_on_submit():
+        identifier = form.identifier.data.strip()
+        password = form.password.data
+        rate_key = login_rate_key("employee", identifier, request.remote_addr)
+        ip_rate_key = login_ip_key("employee", request.remote_addr)
+
+        if employee_login_limiter.is_limited(rate_key) or employee_ip_login_limiter.is_limited(ip_rate_key):
+            flash("Too many login attempts. Please try again later.", "error")
+            return render_template("employee/login.html", form=form), 429
 
         employee = Employee.query.filter(
             or_(
@@ -107,18 +117,25 @@ def login():
         ).first()
 
         if not employee or not employee.check_password(password):
+            employee_login_limiter.record_failure(rate_key)
+            employee_ip_login_limiter.record_failure(ip_rate_key)
             flash("Invalid login credentials.", "error")
-            return render_template("employee/login.html")
+            return render_template("employee/login.html", form=form)
 
         access_error = get_employee_access_error(employee)
         if access_error:
+            employee_login_limiter.record_failure(rate_key)
+            employee_ip_login_limiter.record_failure(ip_rate_key)
             flash(access_error, "error")
-            return render_template("employee/login.html")
+            return render_template("employee/login.html", form=form)
 
+        session.clear()
         login_user(EmployeeSessionUser(employee))
+        employee_login_limiter.reset(rate_key)
+        employee_ip_login_limiter.reset(ip_rate_key)
         return redirect(url_for("employee.dashboard"))
 
-    return render_template("employee/login.html")
+    return render_template("employee/login.html", form=form)
 
 
 @employee_bp.route("/logout")
@@ -132,6 +149,7 @@ def logout():
 @employee_login_required
 def dashboard():
     ensure_attendance_tables()
+    ensure_project_tables()
     employee = current_user.employee
     today = date.today()
     open_attendance = get_open_attendance(employee.id)
