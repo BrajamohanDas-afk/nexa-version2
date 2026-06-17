@@ -35,6 +35,11 @@ class Employee(db.Model):
         back_populates="employee",
         cascade="all, delete-orphan",
     )
+    leave_requests = relationship(
+        "LeaveRequest",
+        back_populates="employee",
+        cascade="all, delete-orphan",
+    )
     projects = relationship(
         "Project",
         secondary="project_employees",

@@ -7,7 +7,7 @@ from wtforms import (
 from wtforms.validators import DataRequired, Email, EqualTo, InputRequired, Length, Optional, ValidationError
 from flask_wtf.file import FileField, FileAllowed
 
-from models import DOCUMENT_TYPE_CHOICES, PROJECT_STATUS_CHOICES
+from models import DOCUMENT_TYPE_CHOICES, LEAVE_STATUS_CHOICES, PROJECT_STATUS_CHOICES
 
 
 class BlogForm(FlaskForm):
@@ -83,6 +83,12 @@ class AdminLoginForm(FlaskForm):
 
 class DeleteForm(FlaskForm):
     pass
+
+
+class LeaveReviewForm(FlaskForm):
+    status = SelectField("Status", choices=LEAVE_STATUS_CHOICES, validators=[DataRequired()])
+    admin_remarks = TextAreaField("Admin Remarks", validators=[Optional(), Length(max=1000)])
+    submit = SubmitField("Save Review")
 
 
 class ProjectForm(FlaskForm):

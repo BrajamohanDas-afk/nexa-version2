@@ -1,0 +1,65 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Leave Requests</h1>
+  </div>
+
+  <div class="dashboard-actions">
+    <a href="{{ url_for('admin.leave_request_list') }}" class="btn-secondary">All</a>
+    <a href="{{ url_for('admin.leave_request_list', status='pending') }}" class="btn-secondary">Pending</a>
+    <a href="{{ url_for('admin.leave_request_list', status='approved') }}" class="btn-secondary">Approved</a>
+    <a href="{{ url_for('admin.leave_request_list', status='rejected') }}" class="btn-secondary">Rejected</a>
+  </div>
+
+  {% if leave_requests %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Type</th>
+          <th>Dates</th>
+          <th>Days</th>
+          <th>Status</th>
+          <th>Requested</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave_request in leave_requests %}
+          <tr>
+            <td>
+              {{ leave_request.employee.full_name }}
+              <div class="table-muted">{{ leave_request.employee.email }}</div>
+            </td>
+            <td>{{ leave_request.leave_type_label }}</td>
+            <td>{{ leave_request.start_date.strftime("%d %b %Y") }} - {{ leave_request.end_date.strftime("%d %b %Y") }}</td>
+            <td>{{ leave_request.duration_days }}</td>
+            <td>
+              <span class="badge {{ 'published' if leave_request.status == 'approved' else 'draft' }}">
+                {{ leave_request.status_label }}
+              </span>
+            </td>
+            <td>{{ leave_request.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+            <td><a href="{{ url_for('admin.review_leave_request', leave_id=leave_request.id) }}">Review</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if pagination.pages > 1 %}
+      <div class="dashboard-actions" style="justify-content: center; margin-top: 1rem;">
+        {% if pagination.has_prev %}
+          <a class="btn-secondary" href="{{ url_for('admin.leave_request_list', status=status_filter, page=pagination.prev_num) }}">Previous</a>
+        {% endif %}
+        <span class="table-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+          <a class="btn-secondary" href="{{ url_for('admin.leave_request_list', status=status_filter, page=pagination.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No leave requests found.</p>
+  {% endif %}
+</div>
+{% endblock %}

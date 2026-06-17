@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from functools import wraps
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for, session
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for, session
 from flask_login import current_user, login_user, logout_user
 from sqlalchemy import or_
 
@@ -10,17 +10,25 @@ from extensions import db
 from models import (
     AttendanceRecord,
     Employee,
+    LeaveRequest,
     date_bounds,
     ensure_attendance_tables,
+    ensure_leave_tables,
     ensure_project_tables,
     format_duration,
     seconds_on_date,
 )
-from .forms import EmployeeLoginForm, PunchForm
+from .forms import EmployeeLoginForm, LeaveRequestForm, PunchForm
 from security_utils import employee_ip_login_limiter, employee_login_limiter, login_ip_key, login_rate_key
 
 
 employee_bp = Blueprint("employee", __name__, url_prefix="/employee")
+LEAVES_PER_PAGE = 20
+
+
+def flash_employee_database_error(error, message="Sorry, there was a database problem. Please try again."):
+    current_app.logger.exception("Employee database error: %s", error)
+    flash(message, "error")
 
 
 class EmployeeSessionUser:
@@ -149,6 +157,7 @@ def logout():
 @employee_login_required
 def dashboard():
     ensure_attendance_tables()
+    ensure_leave_tables()
     ensure_project_tables()
     employee = current_user.employee
     today = date.today()
@@ -175,6 +184,14 @@ def dashboard():
         open_attendance=open_attendance,
         today_records=today_records,
         today_total_hours=format_duration(today_seconds),
+        pending_leave_count=LeaveRequest.query.filter_by(employee_id=employee.id, status="pending").count(),
+        recent_leave_requests=(
+            LeaveRequest.query
+            .filter_by(employee_id=employee.id)
+            .order_by(LeaveRequest.created_at.desc())
+            .limit(3)
+            .all()
+        ),
         punch_form=PunchForm(),
     )
 
@@ -200,6 +217,50 @@ def attendance_history():
         .all()
     )
     return render_template("employee/attendance.html", records=records)
+
+
+@employee_bp.route("/leaves")
+@employee_login_required
+def leave_history():
+    ensure_leave_tables()
+    page = request.args.get("page", 1, type=int)
+    pagination = (
+        LeaveRequest.query
+        .filter_by(employee_id=current_user.employee.id)
+        .order_by(LeaveRequest.created_at.desc())
+        .paginate(page=page, per_page=LEAVES_PER_PAGE, error_out=False)
+    )
+    return render_template(
+        "employee/leave_history.html",
+        leave_requests=pagination.items,
+        pagination=pagination,
+    )
+
+
+@employee_bp.route("/leaves/new", methods=["GET", "POST"])
+@employee_login_required
+def create_leave_request():
+    ensure_leave_tables()
+    form = LeaveRequestForm()
+
+    if form.validate_on_submit():
+        leave_request = LeaveRequest(
+            employee_id=current_user.employee.id,
+            leave_type=form.leave_type.data,
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            reason=form.reason.data.strip(),
+        )
+        try:
+            db.session.add(leave_request)
+            db.session.commit()
+            flash("Leave request submitted.", "success")
+            return redirect(url_for("employee.leave_history"))
+        except Exception as e:
+            db.session.rollback()
+            flash_employee_database_error(e)
+
+    return render_template("employee/leave_form.html", form=form)
 
 
 @employee_bp.route("/attendance/punch-in", methods=["POST"])

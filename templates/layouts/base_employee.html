@@ -20,6 +20,7 @@
         {% if current_user.is_authenticated and current_user.employee is defined %}
           <a href="{{ url_for('employee.dashboard') }}">Dashboard</a>
           <a href="{{ url_for('employee.attendance_history') }}">Attendance</a>
+          <a href="{{ url_for('employee.leave_history') }}">Leaves</a>
           <a href="{{ url_for('employee.logout') }}" class="nav-logout">Logout</a>
         {% else %}
           <a href="{{ url_for('employee.login') }}">Login</a>

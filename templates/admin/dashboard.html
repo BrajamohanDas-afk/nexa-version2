@@ -57,11 +57,24 @@
       <h3>Outstanding</h3>
       <p class="employee-stat-text">{{ outstanding_amount }}</p>
     </div>
+    <div class="stat-card">
+      <h3>Pending Leaves</h3>
+      <p>{{ pending_leave_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Approved Leaves</h3>
+      <p>{{ approved_leave_count }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Rejected Leaves</h3>
+      <p>{{ rejected_leave_count }}</p>
+    </div>
   </div>
 
   <div class="dashboard-actions">
     <a href="{{ url_for('admin.employee_list') }}" class="btn-primary">Manage Employees</a>
     <a href="{{ url_for('admin.attendance_overview') }}" class="btn-primary">View Attendance</a>
+    <a href="{{ url_for('admin.leave_request_list') }}" class="btn-primary">Review Leaves</a>
     <a href="{{ url_for('admin.project_list') }}" class="btn-primary">Manage Projects</a>
     <a href="{{ url_for('admin.project_dashboard') }}" class="btn-secondary">Project Dashboard</a>
     <a href="{{ url_for('admin.blog_list') }}" class="btn-primary">Manage Blogs</a>

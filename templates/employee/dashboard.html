@@ -27,6 +27,11 @@
       <p class="employee-stat-text">{{ "Online" if open_attendance else "Offline" }}</p>
       <div class="table-muted">{{ today_total_hours }} tracked today</div>
     </div>
+    <div class="stat-card">
+      <h3>Pending Leaves</h3>
+      <p>{{ pending_leave_count }}</p>
+      <div class="table-muted">Awaiting admin review</div>
+    </div>
   </div>
 
   <div class="admin-section attendance-panel">
@@ -50,6 +55,43 @@
         {{ punch_form.hidden_tag() }}
         <button type="submit" class="btn-primary">Punch In</button>
       </form>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Leave Requests</h2>
+      <div class="dashboard-actions" style="margin-bottom: 0;">
+        <a href="{{ url_for('employee.create_leave_request') }}" class="btn-primary">New Request</a>
+        <a href="{{ url_for('employee.leave_history') }}" class="btn-secondary">View all</a>
+      </div>
+    </div>
+
+    {% if recent_leave_requests %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Dates</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leave_request in recent_leave_requests %}
+            <tr>
+              <td>{{ leave_request.leave_type_label }}</td>
+              <td>{{ leave_request.start_date.strftime("%d %b %Y") }} - {{ leave_request.end_date.strftime("%d %b %Y") }}</td>
+              <td>
+                <span class="badge {{ 'published' if leave_request.status == 'approved' else 'draft' }}">
+                  {{ leave_request.status_label }}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No leave requests yet.</p>
     {% endif %}
   </div>
 

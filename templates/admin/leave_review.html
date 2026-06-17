@@ -1,0 +1,59 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <div>
+      <h1>Review Leave</h1>
+      <div class="table-muted">{{ leave_request.employee.full_name }} - {{ leave_request.employee.email }}</div>
+    </div>
+    <a href="{{ url_for('admin.leave_request_list') }}" class="btn-secondary">Back</a>
+  </div>
+
+  <div class="dashboard-stats">
+    <div class="stat-card">
+      <h3>Type</h3>
+      <p class="employee-stat-text">{{ leave_request.leave_type_label }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Start</h3>
+      <p class="employee-stat-text">{{ leave_request.start_date.strftime("%d %b %Y") }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>End</h3>
+      <p class="employee-stat-text">{{ leave_request.end_date.strftime("%d %b %Y") }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Days</h3>
+      <p>{{ leave_request.duration_days }}</p>
+    </div>
+  </div>
+
+  <div class="admin-section">
+    <h2>Reason</h2>
+    <p style="color: var(--text-muted); white-space: pre-line;">{{ leave_request.reason }}</p>
+  </div>
+
+  <form method="POST" class="admin-form">
+    {{ form.hidden_tag() }}
+
+    <div class="form-grid">
+      <div class="form-field">
+        {{ form.status.label }}
+        {{ form.status(class="input") }}
+        {% for error in form.status.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field full-span">
+        {{ form.admin_remarks.label }}
+        {{ form.admin_remarks(class="input", rows="5") }}
+        {% for error in form.admin_remarks.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="dashboard-actions">
+      {{ form.submit(class="btn-primary") }}
+      <a href="{{ url_for('admin.leave_request_list') }}" class="btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

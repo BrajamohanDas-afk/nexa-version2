@@ -6,11 +6,14 @@ from models import (
     Category,
     ContactLead,
     Employee,
+    LEAVE_STATUS_CHOICES,
+    LeaveRequest,
     Project,
     ProjectDocument,
     date_bounds,
     ensure_attendance_tables,
     ensure_contact_leads_table,
+    ensure_leave_tables,
     ensure_project_tables,
     format_money,
     format_duration,
@@ -19,10 +22,11 @@ from models import (
     upload_project_document,
     upload_blog_image,
 )
-from .forms import AdminLoginForm, BlogForm, DeleteForm, EmployeeForm, ProjectForm
+from .forms import AdminLoginForm, BlogForm, DeleteForm, EmployeeForm, LeaveReviewForm, ProjectForm
 from .utils import generate_unique_slug
 from security_utils import admin_ip_login_limiter, admin_login_limiter, login_ip_key, login_rate_key
 from sqlalchemy import case
+from sqlalchemy.orm import joinedload
 import re
 import os
 from datetime import date, datetime, timedelta
@@ -33,6 +37,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 ALLOWED_PROJECT_DOCUMENT_EXTENSIONS = {"pdf", "doc", "docx", "jpg", "jpeg", "png", "webp"}
 PROJECTS_PER_PAGE = 20
+LEAVES_PER_PAGE = 20
 
 
 @admin_bp.before_request
@@ -109,6 +114,7 @@ def dashboard():
     ensure_contact_leads_table()
     ensure_employee_tables()
     ensure_project_tables()
+    ensure_leave_tables()
     today = date.today()
     today_start, tomorrow_start = date_bounds(today)
     today_records = (
@@ -146,6 +152,9 @@ def dashboard():
         active_project_count=Project.query.filter_by(status="active").count(),
         completed_project_count=Project.query.filter_by(status="completed").count(),
         outstanding_amount=format_money(sum_project_outstanding_amount()),
+        pending_leave_count=LeaveRequest.query.filter_by(status="pending").count(),
+        approved_leave_count=LeaveRequest.query.filter_by(status="approved").count(),
+        rejected_leave_count=LeaveRequest.query.filter_by(status="rejected").count(),
         lead_count=ContactLead.query.count(),
         recent_leads=ContactLead.query.order_by(ContactLead.created_at.desc()).limit(5).all()
     )
@@ -155,6 +164,7 @@ def ensure_employee_tables():
     Employee.__table__.create(bind=db.engine, checkfirst=True)
     ensure_attendance_tables()
     ensure_project_tables()
+    ensure_leave_tables()
 
 
 def populate_employee_project_choices(form):
@@ -396,6 +406,58 @@ def parse_filter_date(value, label):
     except ValueError:
         flash(f"The {label} date is invalid. Please use a valid date.", "error")
         return None
+
+
+@admin_bp.route("/leaves")
+@login_required
+def leave_request_list():
+    ensure_employee_tables()
+    status_filter = request.args.get("status", "").strip()
+    page = request.args.get("page", 1, type=int)
+    valid_statuses = {status for status, _ in LEAVE_STATUS_CHOICES}
+    query = LeaveRequest.query.options(joinedload(LeaveRequest.employee)).join(Employee)
+
+    if status_filter in valid_statuses:
+        query = query.filter(LeaveRequest.status == status_filter)
+    elif status_filter:
+        flash("Unknown leave status filter.", "error")
+        status_filter = ""
+
+    pagination = query.order_by(LeaveRequest.created_at.desc()).paginate(
+        page=page,
+        per_page=LEAVES_PER_PAGE,
+        error_out=False,
+    )
+
+    return render_template(
+        "admin/leave_list.html",
+        leave_requests=pagination.items,
+        pagination=pagination,
+        status_filter=status_filter,
+    )
+
+
+@admin_bp.route("/leaves/<int:leave_id>", methods=["GET", "POST"])
+@login_required
+def review_leave_request(leave_id):
+    ensure_employee_tables()
+    leave_request = LeaveRequest.query.get_or_404(leave_id)
+    form = LeaveReviewForm(obj=leave_request)
+
+    if form.validate_on_submit():
+        leave_request.status = form.status.data
+        leave_request.admin_remarks = (form.admin_remarks.data or "").strip() or None
+        leave_request.reviewed_at = datetime.utcnow()
+
+        try:
+            db.session.commit()
+            flash("Leave request updated.", "success")
+            return redirect(url_for("admin.leave_request_list"))
+        except Exception as e:
+            db.session.rollback()
+            flash_database_error(e)
+
+    return render_template("admin/leave_review.html", leave_request=leave_request, form=form)
 
 
 def apply_project_payment_filter(query, payment_filter):
