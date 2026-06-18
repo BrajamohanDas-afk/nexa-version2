@@ -16,41 +16,73 @@
   {% block styles %}{% endblock %}
 </head>
 <body>
-
-  <nav class="admin-nav">
-    <div class="admin-nav-inner">
-      <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-brand">
-        <span class="brand-dot"></span> Nexa Admin
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <a href="{{ url_for('admin.dashboard') }}" class="admin-sidebar-brand">
+        <span class="brand-mark">N</span>
+        <span>
+          <strong>Nexa Admin</strong>
+          <small>Control Panel</small>
+        </span>
       </a>
-      <div class="admin-nav-links">
-        <a href="{{ url_for('admin.blog_list') }}">Blogs</a>
-        <a href="{{ url_for('admin.manage_categories') }}">Categories</a>
-        <a href="{{ url_for('admin.employee_list') }}">Employees</a>
-        <a href="{{ url_for('admin.attendance_overview') }}">Attendance</a>
-        <a href="{{ url_for('admin.leave_request_list') }}">Leaves</a>
-        <a href="{{ url_for('admin.project_list') }}">Projects</a>
-        <a href="{{ url_for('admin.lead_list') }}">Leads</a>
-        <a href="/" target="_blank" rel="noopener noreferrer">View Site</a>
+
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Main</div>
+        <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item">Dashboard</a>
+      </div>
+
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Operations</div>
+        <a href="{{ url_for('admin.employee_list') }}" class="admin-nav-item">Employees</a>
+        <a href="{{ url_for('admin.attendance_overview') }}" class="admin-nav-item">Attendance</a>
+        <a href="{{ url_for('admin.leave_request_list') }}" class="admin-nav-item">Leaves</a>
+        <a href="{{ url_for('admin.project_list') }}" class="admin-nav-item">Projects</a>
+        <a href="{{ url_for('admin.reports_dashboard') }}" class="admin-nav-item">Reports</a>
+      </div>
+
+      <div class="admin-nav-group">
+        <div class="admin-nav-label">Content</div>
+        <a href="{{ url_for('admin.blog_list') }}" class="admin-nav-item">Blogs</a>
+        <a href="{{ url_for('admin.manage_categories') }}" class="admin-nav-item">Categories</a>
+        <a href="{{ url_for('admin.lead_list') }}" class="admin-nav-item">Leads</a>
+      </div>
+
+      <div class="admin-sidebar-footer">
+        <div class="admin-user-chip">
+          <span class="brand-mark small">A</span>
+          <span>
+            <strong>Admin</strong>
+            <small>Nexa Solutions</small>
+          </span>
+        </div>
         <a href="{{ url_for('admin.logout') }}" class="nav-logout">Logout</a>
       </div>
-    </div>
-  </nav>
+    </aside>
 
-  <main class="admin-main">
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-container">
-          {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
+    <div class="admin-content">
+      <header class="admin-topbar">
+        <div>
+          <div class="admin-topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+          <div class="admin-topbar-subtitle">{% block page_subtitle %}Overview of Nexa operations{% endblock %}</div>
         </div>
-      {% endif %}
-    {% endwith %}
+        <a href="/" target="_blank" rel="noopener noreferrer" class="btn-secondary">View Site</a>
+      </header>
 
-    {% block content %}{% endblock %}
+      <main class="admin-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
 
-  </main>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
 
   {% block scripts %}{% endblock %}
 </body>

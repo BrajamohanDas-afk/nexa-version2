@@ -29,6 +29,7 @@ from sqlalchemy import case
 from sqlalchemy.orm import joinedload
 import re
 import os
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from extensions import db
 from werkzeug.utils import secure_filename
@@ -38,6 +39,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 ALLOWED_PROJECT_DOCUMENT_EXTENSIONS = {"pdf", "doc", "docx", "jpg", "jpeg", "png", "webp"}
 PROJECTS_PER_PAGE = 20
 LEAVES_PER_PAGE = 20
+REPORT_PREVIEW_LIMIT = 50
 
 
 @admin_bp.before_request
@@ -406,6 +408,152 @@ def parse_filter_date(value, label):
     except ValueError:
         flash(f"The {label} date is invalid. Please use a valid date.", "error")
         return None
+
+
+def default_report_dates(today=None):
+    today = today or date.today()
+    start_date = today.replace(day=1)
+    return start_date, today
+
+
+def resolve_report_dates(date_from_raw, date_to_raw):
+    default_from, default_to = default_report_dates()
+    date_from = parse_filter_date(date_from_raw, "from") if date_from_raw else default_from
+    date_to = parse_filter_date(date_to_raw, "to") if date_to_raw else default_to
+
+    if date_from and date_to and date_from > date_to:
+        flash("The report from date cannot be after the to date.", "error")
+        return default_from, default_to
+
+    return date_from, date_to
+
+
+def build_monthly_project_rows(projects):
+    monthly_counts = defaultdict(int)
+    for project in projects:
+        if project.start_date:
+            monthly_counts[project.start_date.strftime("%Y-%m")] += 1
+
+    return [
+        {"month": month, "count": count}
+        for month, count in sorted(monthly_counts.items(), reverse=True)
+    ]
+
+
+def build_client_project_rows(projects):
+    client_rows = {}
+    for project in projects:
+        row = client_rows.setdefault(
+            project.client_name,
+            {
+                "client_name": project.client_name,
+                "project_count": 0,
+                "total_value": 0,
+                "collected_amount": 0,
+                "outstanding_amount": 0,
+            },
+        )
+        row["project_count"] += 1
+        row["total_value"] += project.total_value or 0
+        row["collected_amount"] += project.advance_received or 0
+        row["outstanding_amount"] += project.remaining_amount
+
+    rows = sorted(client_rows.values(), key=lambda row: row["total_value"], reverse=True)
+    for row in rows:
+        row["total_value_label"] = format_money(row["total_value"])
+        row["collected_amount_label"] = format_money(row["collected_amount"])
+        row["outstanding_amount_label"] = format_money(row["outstanding_amount"])
+    return rows
+
+
+def build_employee_report_rows(records):
+    employee_rows = {}
+    for record in records:
+        row = employee_rows.setdefault(
+            record.employee_id,
+            {
+                "employee": record.employee,
+                "record_count": 0,
+                "total_seconds": 0,
+                "last_activity": None,
+            },
+        )
+        row["record_count"] += 1
+        row["total_seconds"] += record.duration_seconds
+        activity_at = record.check_out_at or record.check_in_at
+        if activity_at and (row["last_activity"] is None or activity_at > row["last_activity"]):
+            row["last_activity"] = activity_at
+
+    rows = sorted(employee_rows.values(), key=lambda row: row["total_seconds"], reverse=True)
+    for row in rows:
+        row["total_hours_label"] = format_duration(row["total_seconds"])
+    return rows
+
+
+def report_count_label(displayed_count, total_count):
+    if displayed_count == total_count:
+        return f"Showing {displayed_count}"
+
+    return f"Showing latest {displayed_count} of {total_count}"
+
+
+@admin_bp.route("/reports")
+@login_required
+def reports_dashboard():
+    ensure_employee_tables()
+    date_from_raw = request.args.get("date_from", "").strip()
+    date_to_raw = request.args.get("date_to", "").strip()
+    date_from, date_to = resolve_report_dates(date_from_raw, date_to_raw)
+
+    project_query = Project.query
+    attendance_query = AttendanceRecord.query.options(joinedload(AttendanceRecord.employee))
+
+    if date_from:
+        project_query = project_query.filter(Project.start_date >= date_from)
+        attendance_query = attendance_query.filter(AttendanceRecord.attendance_date >= date_from)
+
+    if date_to:
+        project_query = project_query.filter(Project.start_date <= date_to)
+        attendance_query = attendance_query.filter(AttendanceRecord.attendance_date <= date_to)
+
+    project_rows = project_query.order_by(
+        Project.start_date.desc(),
+        Project.created_at.desc(),
+    ).limit(REPORT_PREVIEW_LIMIT).all()
+    project_summary_rows = project_query.all()
+    attendance_records = attendance_query.order_by(
+        AttendanceRecord.attendance_date.desc(),
+        AttendanceRecord.check_in_at.desc(),
+    ).limit(REPORT_PREVIEW_LIMIT).all()
+    attendance_summary_records = attendance_query.all()
+    employee_rows = build_employee_report_rows(attendance_summary_records)
+    client_rows = build_client_project_rows(project_summary_rows)
+    payment_summary_rows = [project for project in project_summary_rows if project.payment_status != "paid"]
+    payment_rows = payment_summary_rows[:REPORT_PREVIEW_LIMIT]
+    total_value = sum(project.total_value or 0 for project in project_summary_rows)
+    collected_amount = sum(project.advance_received or 0 for project in project_summary_rows)
+    outstanding_amount = sum(project.remaining_amount for project in project_summary_rows)
+    total_seconds = sum(record.duration_seconds for record in attendance_summary_records)
+
+    return render_template(
+        "admin/reports_dashboard.html",
+        date_from=date_from.isoformat() if date_from else "",
+        date_to=date_to.isoformat() if date_to else "",
+        monthly_project_rows=build_monthly_project_rows(project_summary_rows),
+        client_rows=client_rows,
+        payment_rows=payment_rows,
+        project_rows=project_rows,
+        employee_rows=employee_rows,
+        attendance_records=attendance_records,
+        total_projects=len(project_summary_rows),
+        total_value=format_money(total_value),
+        collected_amount=format_money(collected_amount),
+        outstanding_amount=format_money(outstanding_amount),
+        total_hours=format_duration(total_seconds),
+        project_preview_label=report_count_label(len(project_rows), len(project_summary_rows)),
+        payment_preview_label=report_count_label(len(payment_rows), len(payment_summary_rows)),
+        attendance_preview_label=report_count_label(len(attendance_records), len(attendance_summary_records)),
+    )
 
 
 @admin_bp.route("/leaves")

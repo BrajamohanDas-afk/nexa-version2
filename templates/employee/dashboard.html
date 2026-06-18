@@ -1,33 +1,40 @@
 {% extends "layouts/base_employee.html" %}
 
 {% block title %}Employee Dashboard | Nexa Solutions{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Your attendance, leave, and account overview{% endblock %}
 
 {% block content %}
-<div class="admin-container">
+<div class="dashboard-page">
   <div class="admin-header">
-    <h1>Dashboard</h1>
+    <h1>Account Overview</h1>
     <span class="badge published">{{ employee.account_status_label }}</span>
   </div>
 
   <div class="dashboard-stats">
     <div class="stat-card">
+      <span class="stat-icon">N</span>
       <h3>Name</h3>
       <p class="employee-stat-text">{{ employee.full_name }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">R</span>
       <h3>Role</h3>
       <p class="employee-stat-text">{{ employee.role or "Not set" }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">D</span>
       <h3>Department</h3>
       <p class="employee-stat-text">{{ employee.department or "Not set" }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">T</span>
       <h3>Today</h3>
       <p class="employee-stat-text">{{ "Online" if open_attendance else "Offline" }}</p>
       <div class="table-muted">{{ today_total_hours }} tracked today</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">L</span>
       <h3>Pending Leaves</h3>
       <p>{{ pending_leave_count }}</p>
       <div class="table-muted">Awaiting admin review</div>

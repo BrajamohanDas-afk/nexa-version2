@@ -11,36 +11,74 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
-  <nav class="admin-nav">
-    <div class="admin-nav-inner">
-      <a href="{{ url_for('employee.dashboard') if current_user.is_authenticated and current_user.employee is defined else url_for('employee.login') }}" class="admin-nav-brand">
-        <span class="brand-dot"></span> Nexa Employee
-      </a>
-      <div class="admin-nav-links">
-        {% if current_user.is_authenticated and current_user.employee is defined %}
-          <a href="{{ url_for('employee.dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('employee.attendance_history') }}">Attendance</a>
-          <a href="{{ url_for('employee.leave_history') }}">Leaves</a>
+  {% if current_user.is_authenticated and current_user.employee is defined %}
+    <div class="admin-shell employee-shell">
+      <aside class="admin-sidebar">
+        <a href="{{ url_for('employee.dashboard') }}" class="admin-sidebar-brand">
+          <span class="brand-mark">N</span>
+          <span>
+            <strong>Nexa Employee</strong>
+            <small>Employee Portal</small>
+          </span>
+        </a>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-label">Main</div>
+          <a href="{{ url_for('employee.dashboard') }}" class="admin-nav-item">Dashboard</a>
+          <a href="{{ url_for('employee.attendance_history') }}" class="admin-nav-item">Attendance</a>
+          <a href="{{ url_for('employee.leave_history') }}" class="admin-nav-item">Leaves</a>
+        </div>
+
+        <div class="admin-sidebar-footer">
+          <div class="admin-user-chip">
+            <span class="brand-mark small">E</span>
+            <span>
+              <strong>{{ current_user.employee.full_name }}</strong>
+              <small>{{ current_user.employee.role or "Employee" }}</small>
+            </span>
+          </div>
           <a href="{{ url_for('employee.logout') }}" class="nav-logout">Logout</a>
-        {% else %}
-          <a href="{{ url_for('employee.login') }}">Login</a>
-        {% endif %}
+        </div>
+      </aside>
+
+      <div class="admin-content">
+        <header class="admin-topbar">
+          <div>
+            <div class="admin-topbar-title">{% block page_title %}Employee Dashboard{% endblock %}</div>
+            <div class="admin-topbar-subtitle">{% block page_subtitle %}Track attendance, leave, and account details{% endblock %}</div>
+          </div>
+        </header>
+
+        <main class="admin-main">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-container">
+                {% for category, message in messages %}
+                  <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          {{ self.content() }}
+        </main>
       </div>
     </div>
-  </nav>
+  {% else %}
+    <main class="admin-main employee-login-main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-  <main class="admin-main">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-container">
-          {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    {% block content %}{% endblock %}
-  </main>
+      {{ self.content() }}
+    </main>
+  {% endif %}
+  {% block content %}{% endblock %}
 </body>
 </html>
