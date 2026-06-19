@@ -1,86 +1,89 @@
 {% extends "layouts/base_admin.html" %}
 
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Overview of employee, project, lead, and content activity{% endblock %}
+
 {% block content %}
-<div class="admin-container">
-
-  <h1>Dashboard</h1>
-
+<div class="dashboard-page">
   <div class="dashboard-stats">
     <div class="stat-card">
+      <span class="stat-icon">B</span>
       <h3>Total Blogs</h3>
       <p>{{ blog_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">C</span>
       <h3>Categories</h3>
       <p>{{ category_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">E</span>
       <h3>Employees</h3>
       <p>{{ employee_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">A</span>
       <h3>Active Employees</h3>
       <p>{{ active_employee_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">O</span>
       <h3>Online Now</h3>
       <p>{{ online_employee_count }}</p>
       <div class="table-muted">Currently punched in</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">T</span>
       <h3>Employees Checked Out</h3>
       <p>{{ checked_out_today_count }}</p>
       <div class="table-muted">At least one punch out today</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">H</span>
       <h3>Tracked Hours Today</h3>
       <p class="employee-stat-text">{{ today_total_hours }}</p>
       <div class="table-muted">Includes active sessions</div>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">L</span>
       <h3>Leads</h3>
       <p>{{ lead_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">P</span>
       <h3>Projects</h3>
       <p>{{ project_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">R</span>
       <h3>Active Projects</h3>
       <p>{{ active_project_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">D</span>
       <h3>Completed Projects</h3>
       <p>{{ completed_project_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">O</span>
       <h3>Outstanding</h3>
       <p class="employee-stat-text">{{ outstanding_amount }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">Q</span>
       <h3>Pending Leaves</h3>
       <p>{{ pending_leave_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">Y</span>
       <h3>Approved Leaves</h3>
       <p>{{ approved_leave_count }}</p>
     </div>
     <div class="stat-card">
+      <span class="stat-icon">N</span>
       <h3>Rejected Leaves</h3>
       <p>{{ rejected_leave_count }}</p>
     </div>
-  </div>
-
-  <div class="dashboard-actions">
-    <a href="{{ url_for('admin.employee_list') }}" class="btn-primary">Manage Employees</a>
-    <a href="{{ url_for('admin.attendance_overview') }}" class="btn-primary">View Attendance</a>
-    <a href="{{ url_for('admin.leave_request_list') }}" class="btn-primary">Review Leaves</a>
-    <a href="{{ url_for('admin.project_list') }}" class="btn-primary">Manage Projects</a>
-    <a href="{{ url_for('admin.project_dashboard') }}" class="btn-secondary">Project Dashboard</a>
-    <a href="{{ url_for('admin.blog_list') }}" class="btn-primary">Manage Blogs</a>
-    <a href="{{ url_for('admin.manage_categories') }}" class="btn-secondary">Manage Categories</a>
-    <a href="{{ url_for('admin.lead_list') }}" class="btn-secondary">View Leads</a>
-    <a href="{{ url_for('admin.logout') }}" class="btn-danger">Logout</a>
   </div>
 
   <div class="admin-section">
@@ -122,6 +125,5 @@
       <p style="color: var(--text-muted); margin-top: 1rem;">No leads yet.</p>
     {% endif %}
   </div>
-
 </div>
 {% endblock %}

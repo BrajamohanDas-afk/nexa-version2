@@ -1,0 +1,236 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Reports & Analytics</h1>
+  </div>
+
+  <form method="GET" class="filter-form">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="date_from">From</label>
+        <input id="date_from" type="date" name="date_from" value="{{ date_from }}">
+      </div>
+      <div class="form-group">
+        <label for="date_to">To</label>
+        <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Apply</button>
+        <a href="{{ url_for('admin.reports_dashboard') }}" class="btn-secondary">Reset</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="dashboard-stats">
+    <div class="stat-card"><h3>Projects</h3><p>{{ total_projects }}</p></div>
+    <div class="stat-card"><h3>Total Value</h3><p class="employee-stat-text">{{ total_value }}</p></div>
+    <div class="stat-card"><h3>Collected</h3><p class="employee-stat-text">{{ collected_amount }}</p></div>
+    <div class="stat-card"><h3>Outstanding</h3><p class="employee-stat-text">{{ outstanding_amount }}</p></div>
+    <div class="stat-card"><h3>Tracked Hours</h3><p class="employee-stat-text">{{ total_hours }}</p></div>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Monthly Project Reports</h2>
+    </div>
+    {% if monthly_project_rows %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Projects Onboarded</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in monthly_project_rows %}
+            <tr>
+              <td>{{ row.month }}</td>
+              <td>{{ row.count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No project onboarding data for this period.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Client-wise Project Reports</h2>
+    </div>
+    {% if client_rows %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Projects</th>
+            <th>Total Value</th>
+            <th>Collected</th>
+            <th>Outstanding</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in client_rows %}
+            <tr>
+              <td>{{ row.client_name }}</td>
+              <td>{{ row.project_count }}</td>
+              <td>{{ row.total_value_label }}</td>
+              <td>{{ row.collected_amount_label }}</td>
+              <td>{{ row.outstanding_amount_label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No client project data for this period.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Payment Collection Reports</h2>
+      <span class="badge draft">{{ payment_preview_label }}</span>
+    </div>
+    {% if payment_rows %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Client</th>
+            <th>Total</th>
+            <th>Collected</th>
+            <th>Remaining</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in payment_rows %}
+            <tr>
+              <td><a href="{{ url_for('admin.project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+              <td>{{ project.client_name }}</td>
+              <td>{{ project.total_value_label }}</td>
+              <td>{{ project.advance_received_label }}</td>
+              <td>{{ project.remaining_amount_label }}</td>
+              <td><span class="badge draft">{{ project.payment_status_label }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No pending payment collections for this period.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Project Reports</h2>
+      <span class="badge draft">{{ project_preview_label }}</span>
+    </div>
+    {% if project_rows %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Client</th>
+            <th>Status</th>
+            <th>Start</th>
+            <th>Expected End</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in project_rows %}
+            <tr>
+              <td><a href="{{ url_for('admin.project_detail', project_id=project.id) }}">{{ project.name }}</a></td>
+              <td>{{ project.client_name }}</td>
+              <td><span class="badge {{ 'published' if project.status in ['active', 'completed'] else 'draft' }}">{{ project.status_label }}</span></td>
+              <td>{{ project.start_date.strftime("%d %b %Y") }}</td>
+              <td>{{ project.expected_end_date.strftime("%d %b %Y") if project.expected_end_date else "Not set" }}</td>
+              <td>{{ project.total_value_label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No project records for this period.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Employee Working Hours Reports</h2>
+    </div>
+    {% if employee_rows %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Attendance Records</th>
+            <th>Total Hours</th>
+            <th>Last Activity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in employee_rows %}
+            <tr>
+              <td>{{ row.employee.full_name }}</td>
+              <td>{{ row.employee.department or "No department" }}</td>
+              <td>{{ row.record_count }}</td>
+              <td>{{ row.total_hours_label }}</td>
+              <td>{{ row.last_activity.strftime("%d %b %Y, %H:%M") if row.last_activity else "No activity" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No employee working hour data for this period.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Attendance & Employee Activity Reports</h2>
+      <a href="{{ url_for('admin.attendance_reports', date_from=date_from, date_to=date_to) }}">Detailed attendance</a>
+    </div>
+    {% if attendance_records %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Status</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in attendance_records %}
+            <tr>
+              <td>{{ record.employee.full_name }}</td>
+              <td>{{ record.attendance_date.strftime("%d %b %Y") }}</td>
+              <td>{{ record.check_in_at.strftime("%H:%M") }}</td>
+              <td>{{ record.check_out_at.strftime("%H:%M") if record.check_out_at else "Active" }}</td>
+              <td>
+                {% if record.is_open %}
+                  <span class="badge published">Online</span>
+                {% else %}
+                  <span class="badge draft">Checked Out</span>
+                {% endif %}
+              </td>
+              <td>{{ record.duration_label }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="table-muted" style="margin-top: 1rem;">{{ attendance_preview_label }} attendance records for the selected period.</p>
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">No attendance activity for this period.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
