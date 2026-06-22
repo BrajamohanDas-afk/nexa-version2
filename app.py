@@ -1,4 +1,8 @@
 from flask import Flask, render_template, request, flash, redirect, url_for, Response
+import flask
+import markupsafe
+flask.Markup = markupsafe.Markup
+
 from flask_mail import Message
 from extensions import db, mail
 from dotenv import load_dotenv
