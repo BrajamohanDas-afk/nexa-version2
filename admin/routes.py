@@ -10,22 +10,23 @@ from models import (
     LeaveRequest,
     Project,
     ProjectDocument,
+    CareerJob,
+    JobApplication,
+    APPLICATION_STATUS_CHOICES,
+    application_status_label,
     date_bounds,
-    ensure_attendance_tables,
-    ensure_contact_leads_table,
-    ensure_leave_tables,
-    ensure_project_tables,
     format_money,
     format_duration,
     seconds_on_date,
     signed_project_document_url,
     upload_project_document,
     upload_blog_image,
+    upload_resume,
 )
-from .forms import AdminLoginForm, BlogForm, DeleteForm, EmployeeForm, LeaveReviewForm, ProjectForm
+from .forms import AdminLoginForm, BlogForm, CareerForm, DeleteForm, EmployeeForm, JobApplicationReviewForm, LeaveReviewForm, ProjectForm
 from .utils import generate_unique_slug
 from security_utils import admin_ip_login_limiter, admin_login_limiter, login_ip_key, login_rate_key
-from sqlalchemy import case
+from sqlalchemy import case, desc, func
 from sqlalchemy.orm import joinedload
 import re
 import os
@@ -37,9 +38,17 @@ from werkzeug.utils import secure_filename
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 ALLOWED_PROJECT_DOCUMENT_EXTENSIONS = {"pdf", "doc", "docx", "jpg", "jpeg", "png", "webp"}
+ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
 PROJECTS_PER_PAGE = 20
 LEAVES_PER_PAGE = 20
 REPORT_PREVIEW_LIMIT = 50
+LEADS_PER_PAGE = 25
+EMPLOYEES_PER_PAGE = 25
+ATTENDANCE_PER_PAGE = 25
+ATTENDANCE_REPORTS_PER_PAGE = 50
+BLOGS_PER_PAGE = 25
+CAREERS_PER_PAGE = 25
+APPLICATIONS_PER_PAGE = 25
 
 
 @admin_bp.before_request
@@ -113,12 +122,10 @@ def logout():
 @admin_bp.route("/")
 @login_required
 def dashboard():
-    ensure_contact_leads_table()
-    ensure_employee_tables()
-    ensure_project_tables()
-    ensure_leave_tables()
     today = date.today()
     today_start, tomorrow_start = date_bounds(today)
+
+    # Single query for today's attendance records
     today_records = (
         AttendanceRecord.query
         .filter(AttendanceRecord.check_in_at < tomorrow_start)
@@ -130,10 +137,10 @@ def dashboard():
         )
         .all()
     )
-    online_employee_count = (
-        AttendanceRecord.query
-        .filter_by(status="checked_in", check_out_at=None)
-        .count()
+
+    online_employee_count = sum(
+        1 for record in today_records
+        if record.status == "checked_in" and record.check_out_at is None
     )
     checked_out_today_count = len({
         record.employee_id
@@ -141,36 +148,44 @@ def dashboard():
         if record.status == "checked_out"
     })
     today_total_seconds = sum(seconds_on_date(record, today) for record in today_records)
+
+    # Aggregate all simple counts in one round-trip using scalar subqueries
+    counts = db.session.query(
+        db.select(func.count(BlogPost.id)).scalar_subquery().label("blog_count"),
+        db.select(func.count(Category.id)).scalar_subquery().label("category_count"),
+        db.select(func.count(Employee.id)).scalar_subquery().label("employee_count"),
+        db.select(func.count(Employee.id)).filter(Employee.is_active.is_(True)).scalar_subquery().label("active_employee_count"),
+        db.select(func.count(Project.id)).scalar_subquery().label("project_count"),
+        db.select(func.count(Project.id)).filter(Project.status == "active").scalar_subquery().label("active_project_count"),
+        db.select(func.count(Project.id)).filter(Project.status == "completed").scalar_subquery().label("completed_project_count"),
+        db.select(func.count(LeaveRequest.id)).filter(LeaveRequest.status == "pending").scalar_subquery().label("pending_leave_count"),
+        db.select(func.count(LeaveRequest.id)).filter(LeaveRequest.status == "approved").scalar_subquery().label("approved_leave_count"),
+        db.select(func.count(LeaveRequest.id)).filter(LeaveRequest.status == "rejected").scalar_subquery().label("rejected_leave_count"),
+        db.select(func.count(ContactLead.id)).scalar_subquery().label("lead_count"),
+    ).one()
+
     return render_template(
         "admin/dashboard.html",
-        blog_count=BlogPost.query.count(),
-        category_count=Category.query.count(),
-        employee_count=Employee.query.count(),
-        active_employee_count=Employee.query.filter_by(is_active=True).count(),
+        blog_count=counts.blog_count,
+        category_count=counts.category_count,
+        employee_count=counts.employee_count,
+        active_employee_count=counts.active_employee_count,
         online_employee_count=online_employee_count,
         checked_out_today_count=checked_out_today_count,
         today_total_hours=format_duration(today_total_seconds),
-        project_count=Project.query.count(),
-        active_project_count=Project.query.filter_by(status="active").count(),
-        completed_project_count=Project.query.filter_by(status="completed").count(),
+        project_count=counts.project_count,
+        active_project_count=counts.active_project_count,
+        completed_project_count=counts.completed_project_count,
         outstanding_amount=format_money(sum_project_outstanding_amount()),
-        pending_leave_count=LeaveRequest.query.filter_by(status="pending").count(),
-        approved_leave_count=LeaveRequest.query.filter_by(status="approved").count(),
-        rejected_leave_count=LeaveRequest.query.filter_by(status="rejected").count(),
-        lead_count=ContactLead.query.count(),
-        recent_leads=ContactLead.query.order_by(ContactLead.created_at.desc()).limit(5).all()
+        pending_leave_count=counts.pending_leave_count,
+        approved_leave_count=counts.approved_leave_count,
+        rejected_leave_count=counts.rejected_leave_count,
+        lead_count=counts.lead_count,
+        recent_leads=ContactLead.query.order_by(ContactLead.created_at.desc()).limit(5).all(),
     )
 
 
-def ensure_employee_tables():
-    Employee.__table__.create(bind=db.engine, checkfirst=True)
-    ensure_attendance_tables()
-    ensure_project_tables()
-    ensure_leave_tables()
-
-
 def populate_employee_project_choices(form):
-    ensure_project_tables()
     form.project_ids.choices = [
         (project.id, f"{project.name} - {project.client_name}")
         for project in Project.query.order_by(Project.name.asc()).all()
@@ -201,23 +216,35 @@ def validate_employee_uniqueness(form, employee_id=None):
 @admin_bp.route("/leads")
 @login_required
 def lead_list():
-    ensure_contact_leads_table()
-    leads = ContactLead.query.order_by(ContactLead.created_at.desc()).all()
-    return render_template("admin/lead_list.html", leads=leads)
+    page = request.args.get("page", 1, type=int)
+    pagination = ContactLead.query.order_by(ContactLead.created_at.desc()).paginate(
+        page=page, per_page=LEADS_PER_PAGE, error_out=False
+    )
+    return render_template(
+        "admin/lead_list.html",
+        leads=pagination.items,
+        pagination=pagination,
+    )
 
 
 @admin_bp.route("/employees")
 @login_required
 def employee_list():
-    ensure_employee_tables()
-    employees = Employee.query.order_by(Employee.created_at.desc()).all()
-    return render_template("admin/employee_list.html", employees=employees, delete_form=DeleteForm())
+    page = request.args.get("page", 1, type=int)
+    pagination = Employee.query.order_by(Employee.created_at.desc()).paginate(
+        page=page, per_page=EMPLOYEES_PER_PAGE, error_out=False
+    )
+    return render_template(
+        "admin/employee_list.html",
+        employees=pagination.items,
+        pagination=pagination,
+        delete_form=DeleteForm(),
+    )
 
 
 @admin_bp.route("/employees/new", methods=["GET", "POST"])
 @login_required
 def create_employee():
-    ensure_employee_tables()
     form = EmployeeForm()
     populate_employee_project_choices(form)
 
@@ -260,7 +287,6 @@ def create_employee():
 @admin_bp.route("/employees/<int:employee_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_employee(employee_id):
-    ensure_employee_tables()
     employee = Employee.query.get_or_404(employee_id)
     form = EmployeeForm(obj=employee)
     populate_employee_project_choices(form)
@@ -298,7 +324,6 @@ def edit_employee(employee_id):
 @admin_bp.route("/employees/<int:employee_id>/delete", methods=["POST"])
 @login_required
 def delete_employee(employee_id):
-    ensure_employee_tables()
     form = DeleteForm()
     if not form.validate_on_submit():
         flash("Employee delete action could not be verified. Please try again.", "error")
@@ -314,21 +339,39 @@ def delete_employee(employee_id):
 @admin_bp.route("/attendance")
 @login_required
 def attendance_overview():
-    ensure_employee_tables()
-    employees = Employee.query.order_by(Employee.full_name.asc()).all()
+    page = request.args.get("page", 1, type=int)
+    pagination = Employee.query.order_by(Employee.full_name.asc()).paginate(
+        page=page, per_page=ATTENDANCE_PER_PAGE, error_out=False
+    )
+    employee_ids = [employee.id for employee in pagination.items]
+
     today = date.today()
     today_start, tomorrow_start = date_bounds(today)
-    latest_records = (
-        AttendanceRecord.query
-        .order_by(AttendanceRecord.check_in_at.desc())
-        .all()
+
+    # Latest record per displayed employee using a window function
+    latest_subq = (
+        db.session.query(
+            AttendanceRecord.id,
+            AttendanceRecord.employee_id,
+            AttendanceRecord.check_in_at,
+            AttendanceRecord.check_out_at,
+            AttendanceRecord.status,
+            func.row_number().over(
+                partition_by=AttendanceRecord.employee_id,
+                order_by=desc(AttendanceRecord.check_in_at),
+            ).label("rn"),
+        )
+        .filter(AttendanceRecord.employee_id.in_(employee_ids))
+        .subquery()
     )
-    latest_by_employee = {}
-    for record in latest_records:
-        latest_by_employee.setdefault(record.employee_id, record)
+    latest_records = {
+        row.employee_id: row
+        for row in db.session.query(latest_subq).filter(latest_subq.c.rn == 1).all()
+    }
 
     today_records = (
         AttendanceRecord.query
+        .filter(AttendanceRecord.employee_id.in_(employee_ids))
         .filter(AttendanceRecord.check_in_at < tomorrow_start)
         .filter(
             db.or_(
@@ -338,33 +381,34 @@ def attendance_overview():
         )
         .all()
     )
-    today_seconds_by_employee = {}
+    today_seconds_by_employee = defaultdict(int)
     for record in today_records:
-        today_seconds_by_employee[record.employee_id] = (
-            today_seconds_by_employee.get(record.employee_id, 0) + seconds_on_date(record, today)
-        )
+        today_seconds_by_employee[record.employee_id] += seconds_on_date(record, today)
 
     attendance_rows = [
         {
             "employee": employee,
-            "latest_record": latest_by_employee.get(employee.id),
+            "latest_record": latest_records.get(employee.id),
             "today_total": format_duration(today_seconds_by_employee.get(employee.id, 0)),
         }
-        for employee in employees
+        for employee in pagination.items
     ]
-    return render_template("admin/attendance_overview.html", attendance_rows=attendance_rows)
+    return render_template(
+        "admin/attendance_overview.html",
+        attendance_rows=attendance_rows,
+        pagination=pagination,
+    )
 
 
 @admin_bp.route("/attendance/reports")
 @login_required
 def attendance_reports():
-    ensure_employee_tables()
     employees = Employee.query.order_by(Employee.full_name.asc()).all()
     employee_id = request.args.get("employee_id", type=int)
     date_from_raw = request.args.get("date_from", "").strip()
     date_to_raw = request.args.get("date_to", "").strip()
 
-    query = AttendanceRecord.query.join(Employee)
+    query = AttendanceRecord.query.options(joinedload(AttendanceRecord.employee)).join(Employee)
 
     if employee_id:
         query = query.filter(AttendanceRecord.employee_id == employee_id)
@@ -380,18 +424,24 @@ def attendance_reports():
     if date_from and date_to and date_from > date_to:
         flash("The from date cannot be after the to date.", "error")
         records = []
+        pagination = None
+        total_seconds = 0
     else:
-        records = (
-            query
-            .order_by(AttendanceRecord.attendance_date.desc(), AttendanceRecord.check_in_at.desc())
-            .all()
+        page = request.args.get("page", 1, type=int)
+        pagination = query.order_by(
+            AttendanceRecord.attendance_date.desc(),
+            AttendanceRecord.check_in_at.desc(),
+        ).paginate(page=page, per_page=ATTENDANCE_REPORTS_PER_PAGE, error_out=False)
+        records = pagination.items
+        total_seconds = (
+            query.with_entities(func.coalesce(func.sum(AttendanceRecord.total_seconds), 0)).scalar() or 0
         )
-    total_seconds = sum(record.duration_seconds for record in records)
 
     return render_template(
         "admin/attendance_reports.html",
         employees=employees,
         records=records,
+        pagination=pagination,
         selected_employee_id=employee_id,
         date_from=date_from_raw,
         date_to=date_to_raw,
@@ -426,6 +476,20 @@ def resolve_report_dates(date_from_raw, date_to_raw):
         return default_from, default_to
 
     return date_from, date_to
+
+
+def _sum_attendance_seconds(query):
+    """Sum attendance duration for a query, including currently active sessions."""
+    total = query.with_entities(func.coalesce(func.sum(AttendanceRecord.total_seconds), 0)).scalar() or 0
+    active_records = query.filter(
+        AttendanceRecord.check_out_at.is_(None),
+        AttendanceRecord.status == "checked_in",
+    ).all()
+    total += sum(
+        max(0, int((datetime.now() - record.check_in_at).total_seconds()))
+        for record in active_records
+    )
+    return total
 
 
 def build_monthly_project_rows(projects):
@@ -500,13 +564,12 @@ def report_count_label(displayed_count, total_count):
 @admin_bp.route("/reports")
 @login_required
 def reports_dashboard():
-    ensure_employee_tables()
     date_from_raw = request.args.get("date_from", "").strip()
     date_to_raw = request.args.get("date_to", "").strip()
     date_from, date_to = resolve_report_dates(date_from_raw, date_to_raw)
 
     project_query = Project.query
-    attendance_query = AttendanceRecord.query.options(joinedload(AttendanceRecord.employee))
+    attendance_query = AttendanceRecord.query.join(Employee)
 
     if date_from:
         project_query = project_query.filter(Project.start_date >= date_from)
@@ -516,50 +579,146 @@ def reports_dashboard():
         project_query = project_query.filter(Project.start_date <= date_to)
         attendance_query = attendance_query.filter(AttendanceRecord.attendance_date <= date_to)
 
+    outstanding_expr = case(
+        (Project.total_value > Project.advance_received, Project.total_value - Project.advance_received),
+        else_=0,
+    )
+
+    # Project preview rows (limited)
     project_rows = project_query.order_by(
         Project.start_date.desc(),
         Project.created_at.desc(),
     ).limit(REPORT_PREVIEW_LIMIT).all()
-    project_summary_rows = project_query.all()
-    attendance_records = attendance_query.order_by(
-        AttendanceRecord.attendance_date.desc(),
-        AttendanceRecord.check_in_at.desc(),
-    ).limit(REPORT_PREVIEW_LIMIT).all()
-    attendance_summary_records = attendance_query.all()
-    employee_rows = build_employee_report_rows(attendance_summary_records)
-    client_rows = build_client_project_rows(project_summary_rows)
-    payment_summary_rows = [project for project in project_summary_rows if project.payment_status != "paid"]
-    payment_rows = payment_summary_rows[:REPORT_PREVIEW_LIMIT]
-    total_value = sum(project.total_value or 0 for project in project_summary_rows)
-    collected_amount = sum(project.advance_received or 0 for project in project_summary_rows)
-    outstanding_amount = sum(project.remaining_amount for project in project_summary_rows)
-    total_seconds = sum(record.duration_seconds for record in attendance_summary_records)
+
+    # Project totals via SQL aggregations
+    project_totals = project_query.with_entities(
+        func.count(Project.id).label("total_projects"),
+        func.coalesce(func.sum(Project.total_value), 0).label("total_value"),
+        func.coalesce(func.sum(Project.advance_received), 0).label("collected_amount"),
+        func.coalesce(func.sum(outstanding_expr), 0).label("outstanding_amount"),
+    ).one()
+
+    # Client-wise summary via SQL aggregations
+    client_summary = project_query.with_entities(
+        Project.client_name,
+        func.count(Project.id).label("project_count"),
+        func.coalesce(func.sum(Project.total_value), 0).label("total_value"),
+        func.coalesce(func.sum(Project.advance_received), 0).label("collected_amount"),
+        func.coalesce(func.sum(outstanding_expr), 0).label("outstanding_amount"),
+    ).group_by(Project.client_name).order_by(desc("total_value")).all()
+
+    client_rows = [
+        {
+            "client_name": row.client_name,
+            "project_count": row.project_count,
+            "total_value_label": format_money(row.total_value),
+            "collected_amount_label": format_money(row.collected_amount),
+            "outstanding_amount_label": format_money(row.outstanding_amount),
+        }
+        for row in client_summary
+    ]
+
+    # Monthly project summary via SQL aggregations
+    monthly_raw = project_query.filter(Project.start_date.isnot(None)).with_entities(
+        func.extract("year", Project.start_date).label("year"),
+        func.extract("month", Project.start_date).label("month"),
+        func.count(Project.id).label("count"),
+    ).group_by("year", "month").order_by(desc("year"), desc("month")).all()
+
+    monthly_project_rows = [
+        {"month": f"{int(row.year)}-{int(row.month):02d}", "count": row.count}
+        for row in monthly_raw
+    ]
+
+    # Payment preview rows
+    payment_query = project_query.filter(
+        db.or_(Project.total_value <= 0, Project.advance_received < Project.total_value)
+    )
+    payment_total_count = payment_query.with_entities(func.count(Project.id)).scalar() or 0
+    payment_rows = payment_query.order_by(Project.created_at.desc()).limit(REPORT_PREVIEW_LIMIT).all()
+
+    # Attendance preview rows (limited)
+    attendance_records = (
+        attendance_query
+        .options(joinedload(AttendanceRecord.employee))
+        .order_by(
+            AttendanceRecord.attendance_date.desc(),
+            AttendanceRecord.check_in_at.desc(),
+        )
+        .limit(REPORT_PREVIEW_LIMIT)
+        .all()
+    )
+
+    # Total attendance record count and hours via SQL aggregations
+    total_attendance_count = (
+        attendance_query.with_entities(func.count(AttendanceRecord.id)).scalar() or 0
+    )
+    total_seconds = _sum_attendance_seconds(attendance_query)
+
+    # Employee working hours summary via SQL aggregations
+    # Base totals from closed records; active session time is added per-employee below.
+    employee_summary = (
+        attendance_query.with_entities(
+            AttendanceRecord.employee_id,
+            func.count(AttendanceRecord.id).label("record_count"),
+            func.coalesce(func.sum(AttendanceRecord.total_seconds), 0).label("total_seconds"),
+            func.max(func.coalesce(AttendanceRecord.check_out_at, AttendanceRecord.check_in_at)).label("last_activity"),
+        )
+        .group_by(AttendanceRecord.employee_id)
+        .order_by(desc("total_seconds"))
+        .all()
+    )
+
+    active_records = attendance_query.filter(
+        AttendanceRecord.check_out_at.is_(None),
+        AttendanceRecord.status == "checked_in",
+    ).all()
+    active_seconds_by_employee = defaultdict(int)
+    for record in active_records:
+        active_seconds_by_employee[record.employee_id] += max(
+            0, int((datetime.now() - record.check_in_at).total_seconds())
+        )
+
+    employee_ids = [row.employee_id for row in employee_summary]
+    employees_by_id = {
+        emp.id: emp
+        for emp in Employee.query.filter(Employee.id.in_(employee_ids)).all()
+    }
+
+    employee_rows = [
+        {
+            "employee": employees_by_id.get(row.employee_id),
+            "record_count": row.record_count,
+            "total_hours_label": format_duration(row.total_seconds + active_seconds_by_employee.get(row.employee_id, 0)),
+            "last_activity": row.last_activity,
+        }
+        for row in employee_summary
+    ]
 
     return render_template(
         "admin/reports_dashboard.html",
         date_from=date_from.isoformat() if date_from else "",
         date_to=date_to.isoformat() if date_to else "",
-        monthly_project_rows=build_monthly_project_rows(project_summary_rows),
+        monthly_project_rows=monthly_project_rows,
         client_rows=client_rows,
         payment_rows=payment_rows,
         project_rows=project_rows,
         employee_rows=employee_rows,
         attendance_records=attendance_records,
-        total_projects=len(project_summary_rows),
-        total_value=format_money(total_value),
-        collected_amount=format_money(collected_amount),
-        outstanding_amount=format_money(outstanding_amount),
+        total_projects=project_totals.total_projects,
+        total_value=format_money(project_totals.total_value),
+        collected_amount=format_money(project_totals.collected_amount),
+        outstanding_amount=format_money(project_totals.outstanding_amount),
         total_hours=format_duration(total_seconds),
-        project_preview_label=report_count_label(len(project_rows), len(project_summary_rows)),
-        payment_preview_label=report_count_label(len(payment_rows), len(payment_summary_rows)),
-        attendance_preview_label=report_count_label(len(attendance_records), len(attendance_summary_records)),
+        project_preview_label=report_count_label(len(project_rows), project_totals.total_projects),
+        payment_preview_label=report_count_label(len(payment_rows), payment_total_count),
+        attendance_preview_label=report_count_label(len(attendance_records), total_attendance_count),
     )
 
 
 @admin_bp.route("/leaves")
 @login_required
 def leave_request_list():
-    ensure_employee_tables()
     status_filter = request.args.get("status", "").strip()
     page = request.args.get("page", 1, type=int)
     valid_statuses = {status for status, _ in LEAVE_STATUS_CHOICES}
@@ -588,7 +747,6 @@ def leave_request_list():
 @admin_bp.route("/leaves/<int:leave_id>", methods=["GET", "POST"])
 @login_required
 def review_leave_request(leave_id):
-    ensure_employee_tables()
     leave_request = LeaveRequest.query.get_or_404(leave_id)
     form = LeaveReviewForm(obj=leave_request)
 
@@ -640,7 +798,6 @@ def sum_project_outstanding_amount():
 @admin_bp.route("/projects")
 @login_required
 def project_list():
-    ensure_employee_tables()
     status_filter = request.args.get("status", "").strip()
     payment_filter = request.args.get("payment", "").strip()
     page = request.args.get("page", 1, type=int)
@@ -671,7 +828,6 @@ def project_list():
 @admin_bp.route("/projects/dashboard")
 @login_required
 def project_dashboard():
-    ensure_employee_tables()
     today = date.today()
     month_start = today.replace(day=1)
     if month_start.month == 12:
@@ -702,7 +858,6 @@ def project_dashboard():
 @admin_bp.route("/projects/new", methods=["GET", "POST"])
 @login_required
 def create_project():
-    ensure_employee_tables()
     form = ProjectForm()
     populate_project_form_choices(form)
 
@@ -745,7 +900,6 @@ def create_project():
 @admin_bp.route("/projects/<int:project_id>")
 @login_required
 def project_detail(project_id):
-    ensure_employee_tables()
     project = Project.query.get_or_404(project_id)
     return render_template("admin/project_detail.html", project=project, delete_form=DeleteForm())
 
@@ -753,7 +907,6 @@ def project_detail(project_id):
 @admin_bp.route("/projects/<int:project_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_project(project_id):
-    ensure_employee_tables()
     project = Project.query.get_or_404(project_id)
     form = ProjectForm(obj=project)
     populate_project_form_choices(form)
@@ -790,7 +943,6 @@ def edit_project(project_id):
 @admin_bp.route("/projects/<int:project_id>/delete", methods=["POST"])
 @login_required
 def delete_project(project_id):
-    ensure_employee_tables()
     form = DeleteForm()
     if not form.validate_on_submit():
         flash("Project delete action could not be verified. Please try again.", "error")
@@ -806,7 +958,6 @@ def delete_project(project_id):
 @admin_bp.route("/projects/<int:project_id>/documents/<int:document_id>/delete", methods=["POST"])
 @login_required
 def delete_project_document(project_id, document_id):
-    ensure_employee_tables()
     form = DeleteForm()
     if not form.validate_on_submit():
         flash("Document delete action could not be verified. Please try again.", "error")
@@ -822,7 +973,6 @@ def delete_project_document(project_id, document_id):
 @admin_bp.route("/projects/<int:project_id>/documents/<int:document_id>/download")
 @login_required
 def download_project_document(project_id, document_id):
-    ensure_employee_tables()
     document = ProjectDocument.query.filter_by(id=document_id, project_id=project_id).first_or_404()
     expires_at = int((datetime.utcnow() + timedelta(minutes=5)).timestamp())
     signed_url = signed_project_document_url(document, expires_at)
@@ -892,8 +1042,11 @@ def validate_project_document_file(file, file_name):
 @admin_bp.route("/blogs")
 @login_required
 def blog_list():
-    posts = BlogPost.query.order_by(BlogPost.created_at.desc()).all()
-    return render_template("admin/blog_list.html", blogs=posts)
+    page = request.args.get("page", 1, type=int)
+    pagination = BlogPost.query.order_by(BlogPost.created_at.desc()).paginate(
+        page=page, per_page=BLOGS_PER_PAGE, error_out=False
+    )
+    return render_template("admin/blog_list.html", blogs=pagination.items, pagination=pagination)
 
 # ============================
 # CREATE BLOG 
@@ -1058,4 +1211,157 @@ def upload_image():
         return jsonify({"url": url})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ============================
+# CAREERS
+# ============================
+@admin_bp.route("/careers")
+@login_required
+def career_list():
+    page = request.args.get("page", 1, type=int)
+    status_filter = request.args.get("status", "").strip()
+    query = CareerJob.query
+
+    if status_filter == "active":
+        query = query.filter_by(is_active=True)
+    elif status_filter == "inactive":
+        query = query.filter_by(is_active=False)
+
+    pagination = query.order_by(CareerJob.created_at.desc()).paginate(
+        page=page, per_page=CAREERS_PER_PAGE, error_out=False
+    )
+    return render_template(
+        "admin/career_list.html",
+        jobs=pagination.items,
+        pagination=pagination,
+        status_filter=status_filter,
+        delete_form=DeleteForm(),
+    )
+
+
+@admin_bp.route("/careers/new", methods=["GET", "POST"])
+@login_required
+def create_career():
+    form = CareerForm()
+
+    if form.validate_on_submit():
+        job = CareerJob(
+            title=form.title.data.strip(),
+            slug=generate_unique_slug(form.title.data.strip()),
+            location=form.location.data.strip(),
+            remote_type=form.remote_type.data,
+            job_type=form.job_type.data,
+            description=form.description.data.strip(),
+            requirements=form.requirements.data.strip(),
+            is_active=form.is_active.data,
+        )
+        db.session.add(job)
+        db.session.commit()
+        flash("Job listing created.", "success")
+        return redirect(url_for("admin.career_list"))
+
+    return render_template("admin/career_form.html", form=form, is_edit=False)
+
+
+@admin_bp.route("/careers/<int:job_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_career(job_id):
+    job = CareerJob.query.get_or_404(job_id)
+    form = CareerForm(obj=job)
+
+    if form.validate_on_submit():
+        job.title = form.title.data.strip()
+        job.slug = generate_unique_slug(form.title.data.strip(), job_id=job.id)
+        job.location = form.location.data.strip()
+        job.remote_type = form.remote_type.data
+        job.job_type = form.job_type.data
+        job.description = form.description.data.strip()
+        job.requirements = form.requirements.data.strip()
+        job.is_active = form.is_active.data
+        db.session.commit()
+        flash("Job listing updated.", "success")
+        return redirect(url_for("admin.career_list"))
+
+    return render_template("admin/career_form.html", form=form, is_edit=True, job=job)
+
+
+@admin_bp.route("/careers/<int:job_id>/delete", methods=["POST"])
+@login_required
+def delete_career(job_id):
+    form = DeleteForm()
+    if not form.validate_on_submit():
+        flash("Delete action could not be verified. Please try again.", "error")
+        return redirect(url_for("admin.career_list"))
+
+    job = CareerJob.query.get_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    flash("Job listing deleted.", "success")
+    return redirect(url_for("admin.career_list"))
+
+
+@admin_bp.route("/careers/<int:job_id>/applications")
+@login_required
+def career_applications(job_id):
+    job = CareerJob.query.get_or_404(job_id)
+    status_filter = request.args.get("status", "").strip()
+    page = request.args.get("page", 1, type=int)
+
+    valid_statuses = {status for status, _ in APPLICATION_STATUS_CHOICES}
+    query = JobApplication.query.filter_by(job_id=job.id)
+
+    if status_filter in valid_statuses:
+        query = query.filter_by(status=status_filter)
+    elif status_filter:
+        flash("Unknown application status filter.", "error")
+        status_filter = ""
+
+    pagination = query.order_by(JobApplication.applied_at.desc()).paginate(
+        page=page, per_page=APPLICATIONS_PER_PAGE, error_out=False
+    )
+    return render_template(
+        "admin/career_applications.html",
+        job=job,
+        applications=pagination.items,
+        pagination=pagination,
+        status_filter=status_filter,
+    )
+
+
+@admin_bp.route("/careers/applications/<int:application_id>", methods=["GET", "POST"])
+@login_required
+def review_application(application_id):
+    application = JobApplication.query.get_or_404(application_id)
+    form = JobApplicationReviewForm(obj=application)
+
+    if form.validate_on_submit():
+        application.status = form.status.data
+        application.admin_notes = (form.admin_notes.data or "").strip() or None
+        application.reviewed_at = datetime.utcnow()
+        db.session.commit()
+        flash("Application updated.", "success")
+        return redirect(url_for("admin.career_applications", job_id=application.job_id))
+
+    return render_template(
+        "admin/career_application_detail.html",
+        application=application,
+        form=form,
+    )
+
+
+@admin_bp.route("/careers/applications/<int:application_id>/delete", methods=["POST"])
+@login_required
+def delete_application(application_id):
+    form = DeleteForm()
+    if not form.validate_on_submit():
+        flash("Delete action could not be verified. Please try again.", "error")
+        return redirect(url_for("admin.career_list"))
+
+    application = JobApplication.query.get_or_404(application_id)
+    job_id = application.job_id
+    db.session.delete(application)
+    db.session.commit()
+    flash("Application deleted.", "success")
+    return redirect(url_for("admin.career_applications", job_id=job_id))
 

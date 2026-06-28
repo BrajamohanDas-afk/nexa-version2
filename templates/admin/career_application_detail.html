@@ -1,0 +1,124 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Application Details</h1>
+    <a href="{{ url_for('admin.career_applications', job_id=application.job_id) }}" class="btn-secondary">Back to Applications</a>
+  </div>
+
+  <div class="admin-section">
+    <table class="admin-table">
+      <tbody>
+        <tr>
+          <th>Job</th>
+          <td>{{ application.job.title }}</td>
+        </tr>
+        <tr>
+          <th>Applicant</th>
+          <td>{{ application.full_name }}</td>
+        </tr>
+        <tr>
+          <th>Email</th>
+          <td><a href="mailto:{{ application.email }}">{{ application.email }}</a></td>
+        </tr>
+        <tr>
+          <th>Phone</th>
+          <td>{{ application.phone or "Not provided" }}</td>
+        </tr>
+        <tr>
+          <th>Resume</th>
+          <td>
+            {% if application.resume_url %}
+              <a href="{{ application.resume_url }}" target="_blank" rel="noopener">View Resume</a>
+            {% else %}
+              Not uploaded
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th>Applied</th>
+          <td>{{ application.applied_at.strftime("%d %b %Y, %H:%M") }}</td>
+        </tr>
+        {% if application.reviewed_at %}
+          <tr>
+            <th>Reviewed</th>
+            <td>{{ application.reviewed_at.strftime("%d %b %Y, %H:%M") }}</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="admin-section">
+    <h2>Cover Letter</h2>
+    <p style="white-space: pre-line;">{{ application.cover_letter or "No cover letter provided." }}</p>
+  </div>
+
+  <div class="admin-section">
+    <h2>Screening Questions</h2>
+    <div class="qa-list">
+      <div class="qa-item">
+        <p class="qa-question">Why do you want to work at Nexa Solutions?</p>
+        <p class="qa-answer">{{ application.why_nexa or "Not answered" }}</p>
+      </div>
+      <div class="qa-item">
+        <p class="qa-question">Describe a project you're proud of and your role in it.</p>
+        <p class="qa-answer">{{ application.relevant_project or "Not answered" }}</p>
+      </div>
+      <div class="qa-item">
+        <p class="qa-question">Salary Expectation</p>
+        <p class="qa-answer">{{ application.salary_expectation or "Not provided" }}</p>
+      </div>
+      <div class="qa-item">
+        <p class="qa-question">Notice Period / Availability (in days)</p>
+        <p class="qa-answer">{{ application.notice_period or "Not provided" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-section">
+    <h2>Update Status</h2>
+    <form method="POST" class="admin-form">
+      {{ form.hidden_tag() }}
+      <div class="form-row">
+        <div class="form-group">
+          {{ form.status.label }}
+          {{ form.status(class="form-control") }}
+        </div>
+      </div>
+      <div class="form-group">
+        {{ form.admin_notes.label }}
+        {{ form.admin_notes(class="form-control", rows=4) }}
+      </div>
+      <div class="form-actions">
+        {{ form.submit(class="btn-primary") }}
+      </div>
+    </form>
+
+    <form method="POST"
+          action="{{ url_for('admin.delete_application', application_id=application.id) }}"
+          onsubmit="return confirm('Delete this application?');"
+          style="margin-top: 1rem;">
+      <button type="submit" class="link-danger">Delete application</button>
+    </form>
+  </div>
+</div>
+
+<style>
+.qa-list {
+  display: grid;
+  gap: 1.25rem;
+}
+.qa-question {
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.25rem;
+}
+.qa-answer {
+  color: #555;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+</style>
+{% endblock %}

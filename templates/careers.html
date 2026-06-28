@@ -1,0 +1,165 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Careers | Nexa Solutions{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <p class="page-eyebrow">Join Us</p>
+    <h1>Careers at Nexa Solutions</h1>
+    <p class="page-sub">Build impactful digital products with a team that values clarity, craft, and growth.</p>
+  </div>
+</section>
+
+<section class="section-padding">
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="blog-messages" style="margin-bottom: 2rem;">
+          {% for category, message in messages %}
+            <div class="blog-alert blog-alert-{{ category }}">
+              <p>{{ message }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if jobs %}
+      <div class="jobs-grid">
+        {% for job in jobs %}
+          <article class="job-card">
+            <div class="job-card-header">
+              <h2 class="job-title">{{ job.title }}</h2>
+              <div class="job-meta">
+                <span class="job-badge">{{ job.remote_type_label }}</span>
+                <span class="job-badge">{{ job.job_type_label }}</span>
+                <span class="job-location">{{ job.location }}</span>
+              </div>
+            </div>
+            <div class="job-card-body">
+              <p class="job-summary">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+            </div>
+            <div class="job-card-footer">
+              <a href="{{ url_for('career_detail', slug=job.slug) }}" class="job-apply-btn">View &amp; Apply</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h2>No open positions right now</h2>
+        <p>Check back later or send your resume to <a href="mailto:{{ config['MAIL_USERNAME'] }}">{{ config['MAIL_USERNAME'] }}</a>.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+.page-hero {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  color: #fff;
+  padding: 8rem 1.5rem 5rem;
+  text-align: center;
+}
+.page-hero-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.page-eyebrow {
+  color: #d4ff00;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.page-hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  margin-bottom: 1rem;
+}
+.page-sub {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+.section-padding {
+  padding: 4rem 1.5rem;
+}
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.jobs-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+.job-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 2rem;
+  transition: box-shadow 0.2s ease;
+}
+.job-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.job-title {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.job-badge {
+  background: #f5f5f5;
+  color: #333;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.job-location {
+  color: #666;
+  font-size: 0.875rem;
+}
+.job-summary {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+.empty-state h2 {
+  margin-bottom: 0.75rem;
+}
+.empty-state p {
+  color: #666;
+}
+.job-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #111;
+  border: 1px solid #111;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.job-apply-btn:hover {
+  background: #111;
+  color: #fff;
+}
+</style>
+{% endblock %}

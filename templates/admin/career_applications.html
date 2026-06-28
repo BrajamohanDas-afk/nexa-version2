@@ -1,0 +1,62 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Applications: {{ job.title }}</h1>
+    <a href="{{ url_for('admin.career_list') }}" class="btn-secondary">Back to Careers</a>
+  </div>
+
+  <div class="dashboard-actions" style="margin-bottom: 1rem;">
+    <a href="{{ url_for('admin.career_applications', job_id=job.id) }}" class="btn-secondary {% if not status_filter %}active{% endif %}">All</a>
+    {% for status, label in APPLICATION_STATUS_CHOICES %}
+      <a href="{{ url_for('admin.career_applications', job_id=job.id, status=status) }}" class="btn-secondary {% if status_filter == status %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if applications %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Applied</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for application in applications %}
+          <tr>
+            <td>{{ application.full_name }}</td>
+            <td><a href="mailto:{{ application.email }}">{{ application.email }}</a></td>
+            <td>{{ application.applied_at.strftime("%d %b %Y, %H:%M") }}</td>
+            <td>
+              <span class="badge {{ 'published' if application.status in ['reviewed', 'shortlisted', 'hired'] else 'draft' }}">
+                {{ application.status_label }}
+              </span>
+            </td>
+            <td class="actions">
+              <a href="{{ url_for('admin.review_application', application_id=application.id) }}">Review</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+      <div class="dashboard-actions" style="justify-content: center; margin-top: 1rem;">
+        {% if pagination.has_prev %}
+          <a class="btn-secondary" href="{{ url_for('admin.career_applications', job_id=job.id, status=status_filter, page=pagination.prev_num) }}">Previous</a>
+        {% endif %}
+        <span class="table-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+          <a class="btn-secondary" href="{{ url_for('admin.career_applications', job_id=job.id, status=status_filter, page=pagination.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No applications for this job yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ job.title }} | Careers | Nexa Solutions{% endblock %}
+
+{% block content %}
+<section class="page-hero page-hero-small">
+  <div class="page-hero-inner">
+    <p class="page-eyebrow">Careers</p>
+    <h1>{{ job.title }}</h1>
+    <div class="job-meta job-meta-center">
+      <span class="job-badge">{{ job.remote_type_label }}</span>
+      <span class="job-badge">{{ job.job_type_label }}</span>
+      <span class="job-location">{{ job.location }}</span>
+    </div>
+  </div>
+</section>
+
+<section class="section-padding">
+  <div class="container container-narrow">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="blog-messages" style="margin-bottom: 2rem;">
+          {% for category, message in messages %}
+            <div class="blog-alert blog-alert-{{ category }}">
+              <p>{{ message }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="job-detail">
+      <div class="job-detail-section">
+        <h2>About the Role</h2>
+        <div class="rich-text">{{ job.description|safe }}</div>
+      </div>
+
+      <div class="job-detail-section">
+        <h2>Requirements</h2>
+        <div class="rich-text">{{ job.requirements|safe }}</div>
+      </div>
+    </div>
+
+    <div class="application-form-wrapper">
+      <h2>Apply for this role</h2>
+      <form method="POST" action="{{ url_for('apply_for_job', slug=job.slug) }}" enctype="multipart/form-data" class="application-form">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          {{ form.full_name.label }}
+          {{ form.full_name(class="form-control") }}
+          {% if form.full_name.errors %}
+            <div class="form-error">{{ form.full_name.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.email.label }}
+          {{ form.email(class="form-control") }}
+          {% if form.email.errors %}
+            <div class="form-error">{{ form.email.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.phone.label }}
+          {{ form.phone(class="form-control") }}
+          {% if form.phone.errors %}
+            <div class="form-error">{{ form.phone.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.resume.label }}
+          {{ form.resume(class="form-control") }}
+          {% if form.resume.errors %}
+            <div class="form-error">{{ form.resume.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.cover_letter.label }}
+          {{ form.cover_letter(class="form-control", rows=4) }}
+          {% if form.cover_letter.errors %}
+            <div class="form-error">{{ form.cover_letter.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.why_nexa.label }}
+          {{ form.why_nexa(class="form-control", rows=4) }}
+          {% if form.why_nexa.errors %}
+            <div class="form-error">{{ form.why_nexa.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.relevant_project.label }}
+          {{ form.relevant_project(class="form-control", rows=4) }}
+          {% if form.relevant_project.errors %}
+            <div class="form-error">{{ form.relevant_project.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.salary_expectation.label }}
+          {{ form.salary_expectation(class="form-control") }}
+          {% if form.salary_expectation.errors %}
+            <div class="form-error">{{ form.salary_expectation.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.notice_period.id }}">Notice Period / Availability (in days)</label>
+          {{ form.notice_period(class="form-control", id=form.notice_period.id) }}
+          {% if form.notice_period.errors %}
+            <div class="form-error">{{ form.notice_period.errors[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-actions">
+          {{ form.submit(class="apply-form-btn apply-form-btn-primary") }}
+          <a href="{{ url_for('careers') }}" class="apply-form-btn apply-form-btn-secondary">Back to all jobs</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<style>
+.page-hero {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  color: #fff;
+  padding: 8rem 1.5rem 5rem;
+  text-align: center;
+}
+.page-hero-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.page-eyebrow {
+  color: #d4ff00;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.page-hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  margin-bottom: 1rem;
+}
+.page-hero-small {
+  padding: 7rem 1.5rem 3rem;
+}
+.job-meta-center {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.container-narrow {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.job-detail {
+  margin-bottom: 3rem;
+}
+.job-detail-section {
+  margin-bottom: 2.5rem;
+}
+.job-detail-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.rich-text {
+  color: #444;
+  line-height: 1.7;
+}
+.rich-text ul, .rich-text ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.application-form-wrapper {
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 2rem;
+}
+.application-form-wrapper h2 {
+  margin-bottom: 1.5rem;
+}
+.application-form .form-group {
+  margin-bottom: 1.25rem;
+}
+.application-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #222;
+}
+.application-form .form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  background: #fff;
+  color: #111;
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+.application-form textarea.form-control {
+  resize: vertical;
+  min-height: 120px;
+}
+.application-form .form-control:focus {
+  outline: none;
+  border-color: #d4ff00;
+  box-shadow: 0 0 0 3px rgba(212, 255, 0, 0.15);
+}
+.application-form .form-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+.application-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.apply-form-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  border: 1px solid #111;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.apply-form-btn-primary {
+  background: #fff;
+  color: #111;
+}
+.apply-form-btn-primary:hover {
+  background: #111;
+  color: #fff;
+}
+.apply-form-btn-secondary {
+  background: transparent;
+  color: #111;
+}
+.apply-form-btn-secondary:hover {
+  background: #111;
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .application-form .form-actions {
+    flex-direction: column;
+  }
+}
+</style>
+
+<script>
+  // Prevent Backspace from navigating back when focus is inside the application form
+  document.querySelector('.application-form').addEventListener('keydown', function (e) {
+    if (e.key === 'Backspace' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) && !e.target.isContentEditable) {
+      e.preventDefault();
+    }
+  });
+</script>
+{% endblock %}

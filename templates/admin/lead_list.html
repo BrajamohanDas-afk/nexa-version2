@@ -43,6 +43,18 @@
         {% endfor %}
       </tbody>
     </table>
+
+    {% if pagination.pages > 1 %}
+      <div class="dashboard-actions" style="justify-content: center; margin-top: 1rem;">
+        {% if pagination.has_prev %}
+          <a class="btn-secondary" href="{{ url_for('admin.lead_list', page=pagination.prev_num) }}">Previous</a>
+        {% endif %}
+        <span class="table-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+          <a class="btn-secondary" href="{{ url_for('admin.lead_list', page=pagination.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
   {% else %}
     <p style="color: var(--text-muted); margin-top: 1rem;">No leads yet.</p>
   {% endif %}
