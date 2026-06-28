@@ -1,0 +1,80 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Careers</h1>
+    <a href="{{ url_for('admin.create_career') }}" class="btn-primary">+ New Job</a>
+  </div>
+
+  <div class="dashboard-actions" style="margin-bottom: 1rem;">
+    <a href="{{ url_for('admin.career_list') }}" class="btn-secondary {% if not status_filter %}active{% endif %}">All</a>
+    <a href="{{ url_for('admin.career_list', status='active') }}" class="btn-secondary {% if status_filter == 'active' %}active{% endif %}">Active</a>
+    <a href="{{ url_for('admin.career_list', status='inactive') }}" class="btn-secondary {% if status_filter == 'inactive' %}active{% endif %}">Inactive</a>
+  </div>
+
+  {% if jobs %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Location</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Applications</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+          <tr>
+            <td>
+              {{ job.title }}
+              <div class="table-muted">{{ job.remote_type_label }}</div>
+            </td>
+            <td>{{ job.location }}</td>
+            <td>{{ job.job_type_label }}</td>
+            <td>
+              {% if job.is_active %}
+                <span class="badge published">Active</span>
+              {% else %}
+                <span class="badge draft">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('admin.career_applications', job_id=job.id) }}">
+                {{ job.applications|length }} application{{ 's' if job.applications|length != 1 else '' }}
+              </a>
+            </td>
+            <td class="actions">
+              <a href="{{ url_for('admin.edit_career', job_id=job.id) }}">Edit</a>
+              <a href="{{ url_for('career_detail', slug=job.slug) }}" target="_blank" rel="noopener">View</a>
+              <form method="POST"
+                    action="{{ url_for('admin.delete_career', job_id=job.id) }}"
+                    onsubmit="return confirm('Delete this job listing?');"
+                    style="display:inline;">
+                {{ delete_form.hidden_tag() }}
+                <button type="submit" class="link-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+      <div class="dashboard-actions" style="justify-content: center; margin-top: 1rem;">
+        {% if pagination.has_prev %}
+          <a class="btn-secondary" href="{{ url_for('admin.career_list', status=status_filter, page=pagination.prev_num) }}">Previous</a>
+        {% endif %}
+        <span class="table-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+          <a class="btn-secondary" href="{{ url_for('admin.career_list', status=status_filter, page=pagination.next_num) }}">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No job listings yet. <a href="{{ url_for('admin.create_career') }}">Create the first one.</a></p>
+  {% endif %}
+</div>
+{% endblock %}

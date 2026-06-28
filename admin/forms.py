@@ -7,7 +7,14 @@ from wtforms import (
 from wtforms.validators import DataRequired, Email, EqualTo, InputRequired, Length, Optional, ValidationError
 from flask_wtf.file import FileField, FileAllowed
 
-from models import DOCUMENT_TYPE_CHOICES, LEAVE_STATUS_CHOICES, PROJECT_STATUS_CHOICES
+from models import (
+    DOCUMENT_TYPE_CHOICES,
+    LEAVE_STATUS_CHOICES,
+    PROJECT_STATUS_CHOICES,
+    JOB_TYPE_CHOICES,
+    REMOTE_TYPE_CHOICES,
+    APPLICATION_STATUS_CHOICES,
+)
 
 
 class BlogForm(FlaskForm):
@@ -122,3 +129,39 @@ class ProjectForm(FlaskForm):
 
         if field.data is not None and self.total_value.data is not None and field.data > self.total_value.data:
             raise ValidationError("Advance received cannot exceed total project value.")
+
+
+class CareerForm(FlaskForm):
+    title = StringField("Job Title", validators=[DataRequired(), Length(max=180)])
+    location = StringField("Location", validators=[DataRequired(), Length(max=120)])
+    remote_type = SelectField("Work Mode", choices=REMOTE_TYPE_CHOICES, validators=[DataRequired()])
+    job_type = SelectField("Job Type", choices=JOB_TYPE_CHOICES, validators=[DataRequired()])
+    description = TextAreaField("Job Description", validators=[DataRequired()])
+    requirements = TextAreaField("Requirements", validators=[DataRequired()])
+    is_active = BooleanField("Listing active")
+    submit = SubmitField("Save Job")
+
+
+class JobApplicationReviewForm(FlaskForm):
+    status = SelectField("Status", choices=APPLICATION_STATUS_CHOICES, validators=[DataRequired()])
+    admin_notes = TextAreaField("Admin Notes", validators=[Optional(), Length(max=2000)])
+    submit = SubmitField("Save Review")
+
+
+class JobApplicationForm(FlaskForm):
+    full_name = StringField("Full Name", validators=[DataRequired(), Length(max=120)])
+    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=255)])
+    phone = StringField("Phone", validators=[Optional(), Length(max=50)])
+    resume = FileField(
+        "Resume / CV",
+        validators=[FileAllowed(["pdf", "doc", "docx"], "PDF or Word documents only")]
+    )
+    cover_letter = TextAreaField("Cover Letter", validators=[Optional()])
+
+    # Screening questions
+    why_nexa = TextAreaField("Why do you want to work at Nexa Solutions?", validators=[DataRequired()])
+    relevant_project = TextAreaField("Describe a project you're proud of and your role in it.", validators=[DataRequired()])
+    salary_expectation = StringField("Salary Expectation", validators=[Optional(), Length(max=120)])
+    notice_period = StringField("Notice Period / Availability (in days)", validators=[Optional(), Length(max=120)])
+
+    submit = SubmitField("Submit Application")
