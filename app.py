@@ -13,7 +13,8 @@ from flask_login import (
 )
 from admin.routes import admin_bp
 from employee.routes import EmployeeSessionUser, employee_bp
-from models import BlogPost, Category, ContactLead, Employee, ensure_contact_leads_table
+from models import BlogPost, Category, ContactLead, Employee, CareerJob, JobApplication, ensure_all_tables, upload_resume
+from admin.forms import JobApplicationForm
 import os
 import math
 import re
@@ -117,6 +118,9 @@ app.register_blueprint(employee_bp)
 # DB INIT
 # ============================
 db.init_app(app)
+
+with app.app_context():
+    ensure_all_tables()
 
 # with app.app_context():
 #     db.create_all()
@@ -469,6 +473,84 @@ def about():
 # ============================
 # SEO — SITEMAP & ROBOTS
 # ============================
+# ============================
+# CAREERS
+# ============================
+@app.route("/careers")
+def careers():
+    active_jobs = (
+        CareerJob.query
+        .filter_by(is_active=True)
+        .order_by(CareerJob.created_at.desc())
+        .all()
+    )
+    return render_template("careers.html", jobs=active_jobs)
+
+
+@app.route("/careers/<slug>")
+def career_detail(slug):
+    job = CareerJob.query.filter_by(slug=slug, is_active=True).first_or_404()
+    form = JobApplicationForm()
+    return render_template("career_detail.html", job=job, form=form)
+
+
+@app.route("/careers/<slug>/apply", methods=["POST"])
+def apply_for_job(slug):
+    job = CareerJob.query.filter_by(slug=slug, is_active=True).first_or_404()
+    form = JobApplicationForm()
+
+    if form.validate_on_submit():
+        resume_url = None
+        if form.resume.data:
+            try:
+                resume_url = upload_resume(form.resume.data)
+            except Exception as e:
+                app.logger.error("Resume upload error: %s", e)
+                flash("There was a problem uploading your resume. Please try again.", "error")
+                return render_template("career_detail.html", job=job, form=form)
+
+        application = JobApplication(
+            job_id=job.id,
+            full_name=form.full_name.data.strip(),
+            email=form.email.data.strip().lower(),
+            phone=(form.phone.data or "").strip() or None,
+            resume_url=resume_url,
+            cover_letter=(form.cover_letter.data or "").strip() or None,
+            why_nexa=form.why_nexa.data.strip(),
+            relevant_project=form.relevant_project.data.strip(),
+            salary_expectation=(form.salary_expectation.data or "").strip() or None,
+            notice_period=(form.notice_period.data or "").strip() or None,
+        )
+        db.session.add(application)
+        db.session.commit()
+
+        # Send notification email to admin
+        try:
+            recipient = os.getenv("CONTACT_EMAIL", app.config["MAIL_USERNAME"])
+            msg = Message(
+                subject=f"New job application: {job.title}",
+                sender=app.config["MAIL_USERNAME"],
+                recipients=[recipient],
+                reply_to=application.email,
+                body=(
+                    f"New application received for: {job.title}\n"
+                    f"Applicant: {application.full_name}\n"
+                    f"Email: {application.email}\n"
+                    f"Phone: {application.phone or 'Not provided'}\n"
+                    f"Resume: {application.resume_url or 'Not uploaded'}\n\n"
+                    f"View in admin: {request.url_root}admin/careers/{job.id}/applications\n"
+                ),
+            )
+            mail.send(msg)
+        except Exception as e:
+            app.logger.error("Career application email error: %s", e)
+
+        flash("Your application has been submitted. We'll be in touch soon!", "success")
+        return redirect(url_for("career_detail", slug=job.slug))
+
+    return render_template("career_detail.html", job=job, form=form)
+
+
 @app.route("/sitemap.xml")
 def sitemap():
     base = os.getenv("SITE_URL", "https://nexasolutions.de").rstrip("/")
@@ -485,12 +567,18 @@ def sitemap():
         {"loc": base + "/blog",                             "priority": "0.9", "changefreq": "daily"},
         {"loc": base + "/about",                            "priority": "0.6", "changefreq": "yearly"},
         {"loc": base + "/contact",                          "priority": "0.6", "changefreq": "yearly"},
+        {"loc": base + "/careers",                          "priority": "0.7", "changefreq": "weekly"},
     ]
 
     try:
         posts = BlogPost.query.filter_by(is_published=True).order_by(BlogPost.published_at.desc()).all()
     except Exception:
         posts = []
+
+    try:
+        active_jobs = CareerJob.query.filter_by(is_active=True).order_by(CareerJob.updated_at.desc()).all()
+    except Exception:
+        active_jobs = []
 
     blog_pages = [
         {
@@ -500,6 +588,16 @@ def sitemap():
             "lastmod": p.updated_at.strftime("%Y-%m-%d") if p.updated_at else today,
         }
         for p in posts
+    ]
+
+    career_pages = [
+        {
+            "loc": base + "/careers/" + job.slug,
+            "priority": "0.6",
+            "changefreq": "weekly",
+            "lastmod": job.updated_at.strftime("%Y-%m-%d") if job.updated_at else today,
+        }
+        for job in active_jobs
     ]
 
     urls = ""
@@ -513,6 +611,15 @@ def sitemap():
             f"  </url>\n"
         )
     for page in blog_pages:
+        urls += (
+            f"  <url>\n"
+            f"    <loc>{page['loc']}</loc>\n"
+            f"    <lastmod>{page['lastmod']}</lastmod>\n"
+            f"    <changefreq>{page['changefreq']}</changefreq>\n"
+            f"    <priority>{page['priority']}</priority>\n"
+            f"  </url>\n"
+        )
+    for page in career_pages:
         urls += (
             f"  <url>\n"
             f"    <loc>{page['loc']}</loc>\n"

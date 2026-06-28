@@ -12,9 +12,6 @@ from models import (
     Employee,
     LeaveRequest,
     date_bounds,
-    ensure_attendance_tables,
-    ensure_leave_tables,
-    ensure_project_tables,
     format_duration,
     seconds_on_date,
 )
@@ -24,6 +21,7 @@ from security_utils import employee_ip_login_limiter, employee_login_limiter, lo
 
 employee_bp = Blueprint("employee", __name__, url_prefix="/employee")
 LEAVES_PER_PAGE = 20
+ATTENDANCE_PER_PAGE = 25
 
 
 def flash_employee_database_error(error, message="Sorry, there was a database problem. Please try again."):
@@ -156,9 +154,6 @@ def logout():
 @employee_bp.route("/dashboard")
 @employee_login_required
 def dashboard():
-    ensure_attendance_tables()
-    ensure_leave_tables()
-    ensure_project_tables()
     employee = current_user.employee
     today = date.today()
     open_attendance = get_open_attendance(employee.id)
@@ -208,21 +203,19 @@ def get_open_attendance(employee_id):
 @employee_bp.route("/attendance")
 @employee_login_required
 def attendance_history():
-    ensure_attendance_tables()
-    records = (
+    page = request.args.get("page", 1, type=int)
+    pagination = (
         AttendanceRecord.query
         .filter_by(employee_id=current_user.employee.id)
         .order_by(AttendanceRecord.attendance_date.desc(), AttendanceRecord.check_in_at.desc())
-        .limit(100)
-        .all()
+        .paginate(page=page, per_page=ATTENDANCE_PER_PAGE, error_out=False)
     )
-    return render_template("employee/attendance.html", records=records)
+    return render_template("employee/attendance.html", records=pagination.items, pagination=pagination)
 
 
 @employee_bp.route("/leaves")
 @employee_login_required
 def leave_history():
-    ensure_leave_tables()
     page = request.args.get("page", 1, type=int)
     pagination = (
         LeaveRequest.query
@@ -240,7 +233,6 @@ def leave_history():
 @employee_bp.route("/leaves/new", methods=["GET", "POST"])
 @employee_login_required
 def create_leave_request():
-    ensure_leave_tables()
     form = LeaveRequestForm()
 
     if form.validate_on_submit():
@@ -266,7 +258,6 @@ def create_leave_request():
 @employee_bp.route("/attendance/punch-in", methods=["POST"])
 @employee_login_required
 def punch_in():
-    ensure_attendance_tables()
     employee = current_user.employee
     form = PunchForm()
 
@@ -294,7 +285,6 @@ def punch_in():
 @employee_bp.route("/attendance/punch-out", methods=["POST"])
 @employee_login_required
 def punch_out():
-    ensure_attendance_tables()
     form = PunchForm()
 
     if not form.validate_on_submit():
