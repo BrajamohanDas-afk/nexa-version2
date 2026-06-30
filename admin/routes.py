@@ -23,13 +23,14 @@ from models import (
     upload_blog_image,
     upload_resume,
 )
-from .forms import AdminLoginForm, BlogForm, CareerForm, DeleteForm, EmployeeForm, JobApplicationReviewForm, LeaveReviewForm, ProjectForm
+from .forms import AdminLoginForm, BlogForm, CareerForm, CsrfForm, DeleteForm, EmployeeForm, JobApplicationReviewForm, LeaveReviewForm, ProjectForm
 from .utils import generate_unique_slug
 from security_utils import admin_ip_login_limiter, admin_login_limiter, login_ip_key, login_rate_key
 from sqlalchemy import case, desc, func
 from sqlalchemy.orm import joinedload
 import re
 import os
+import hmac
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from extensions import db
@@ -39,6 +40,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 ALLOWED_PROJECT_DOCUMENT_EXTENSIONS = {"pdf", "doc", "docx", "jpg", "jpeg", "png", "webp"}
 ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
+ALLOWED_BLOG_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 PROJECTS_PER_PAGE = 20
 LEAVES_PER_PAGE = 20
 REPORT_PREVIEW_LIMIT = 50
@@ -100,7 +102,7 @@ def verify_admin_credentials(username, password):
     if username != expected_username:
         return False
 
-    return bool(plaintext_password) and password == plaintext_password
+    return bool(plaintext_password) and hmac.compare_digest(password, plaintext_password)
 
 
 def flash_database_error(error, message="Sorry, there was a database problem. Please try again."):
@@ -1086,6 +1088,26 @@ def validate_project_document_file(file, file_name):
     if not valid_signatures.get(extension, False):
         raise ValueError("Uploaded document content does not match the selected file type.")
 
+
+def validate_blog_image_file(file):
+    file_name = secure_filename(file.filename or "")
+    extension = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+    if extension not in ALLOWED_BLOG_IMAGE_EXTENSIONS:
+        raise ValueError("Unsupported blog image type.")
+
+    header = file.stream.read(16)
+    file.stream.seek(0)
+
+    valid_signatures = {
+        "png": header.startswith(b"\x89PNG\r\n\x1a\n"),
+        "jpg": header.startswith(b"\xff\xd8\xff"),
+        "jpeg": header.startswith(b"\xff\xd8\xff"),
+        "webp": header.startswith(b"RIFF") and header[8:12] == b"WEBP",
+    }
+
+    if not valid_signatures.get(extension, False):
+        raise ValueError("Uploaded image content does not match the selected file type.")
+
 # ============================
 # BLOG LIST
 # ============================
@@ -1096,7 +1118,12 @@ def blog_list():
     pagination = BlogPost.query.order_by(BlogPost.created_at.desc()).paginate(
         page=page, per_page=BLOGS_PER_PAGE, error_out=False
     )
-    return render_template("admin/blog_list.html", blogs=pagination.items, pagination=pagination)
+    return render_template(
+        "admin/blog_list.html",
+        blogs=pagination.items,
+        pagination=pagination,
+        delete_form=DeleteForm(),
+    )
 
 # ============================
 # CREATE BLOG 
@@ -1117,42 +1144,38 @@ def create_blog():
             flash("Blog content cannot be empty.", "error")
             return render_template("admin/blog_form.html", form=form, is_edit=False)
 
-        # Handle Image Upload
-        image_url = None
-        if form.featured_image.data:
-            image_url = upload_blog_image(form.featured_image.data)
-
-        # Create the new record
-        post = BlogPost(
-            title=form.title.data,
-            slug=generate_unique_slug(form.title.data),
-            summary=form.summary.data,
-            content=content,
-            author_name=form.author_name.data,
-            category_id=form.category_id.data,
-            featured_image=image_url,
-            featured_image_alt=form.featured_image_alt.data or None,
-            seo_title=form.seo_title.data or None,
-            seo_description=form.seo_description.data or None,
-            seo_keywords=form.seo_keywords.data or None,
-            is_published=form.is_published.data,
-            published_at=db.func.now() if form.is_published.data else None,
-        )
-
         try:
+            image_url = None
+            if form.featured_image.data:
+                validate_blog_image_file(form.featured_image.data)
+                image_url = upload_blog_image(form.featured_image.data)
+
+            post = BlogPost(
+                title=form.title.data,
+                slug=generate_unique_slug(form.title.data),
+                summary=form.summary.data,
+                content=content,
+                author_name=form.author_name.data,
+                category_id=form.category_id.data,
+                featured_image=image_url,
+                featured_image_alt=form.featured_image_alt.data or None,
+                seo_title=form.seo_title.data or None,
+                seo_description=form.seo_description.data or None,
+                seo_keywords=form.seo_keywords.data or None,
+                is_published=form.is_published.data,
+                published_at=db.func.now() if form.is_published.data else None,
+            )
             db.session.add(post)
             db.session.commit()
             flash("Blog created successfully!", "success")
             return redirect(url_for("admin.blog_list"))
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), "error")
         except Exception as e:
             db.session.rollback()
             flash_database_error(e)
 
-    else:
-        print("VALIDATION FAILED!")
-        print(form.errors)
-
-    
     return render_template("admin/blog_form.html", form=form, is_edit=False)
 
 # ============================
@@ -1165,7 +1188,7 @@ def edit_blog(blog_id):
     form = BlogForm(obj=post)
 
     form.category_id.choices = [
-        (c.id, c.name) for c in Category.query.order_by(Category.name).all()
+        (str(c.id), c.name) for c in Category.query.order_by(Category.name).all()
     ]
 
     if form.validate_on_submit():
@@ -1189,12 +1212,20 @@ def edit_blog(blog_id):
         if form.is_published.data and not post.published_at:
             post.published_at = db.func.now()
 
-        if form.featured_image.data:
-            post.featured_image = upload_blog_image(form.featured_image.data)
+        try:
+            if form.featured_image.data:
+                validate_blog_image_file(form.featured_image.data)
+                post.featured_image = upload_blog_image(form.featured_image.data)
 
-        db.session.commit()
-        flash("Blog updated", "success")
-        return redirect(url_for("admin.blog_list"))
+            db.session.commit()
+            flash("Blog updated", "success")
+            return redirect(url_for("admin.blog_list"))
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), "error")
+        except Exception as e:
+            db.session.rollback()
+            flash_database_error(e)
 
     return render_template("admin/blog_form.html", form=form, is_edit=True)
 
@@ -1204,6 +1235,11 @@ def edit_blog(blog_id):
 @admin_bp.route("/blogs/<int:blog_id>/delete", methods=["POST"])
 @login_required
 def delete_blog(blog_id):
+    form = DeleteForm()
+    if not form.validate_on_submit():
+        flash("Blog delete action could not be verified. Please try again.", "error")
+        return redirect(url_for("admin.blog_list"))
+
     blog = BlogPost.query.get_or_404(blog_id)
     db.session.delete(blog)
     db.session.commit()
@@ -1213,11 +1249,21 @@ def delete_blog(blog_id):
 @admin_bp.route("/categories", methods=["GET", "POST"])
 @login_required
 def manage_categories():
+    form = CsrfForm()
     if request.method == "POST":
-        name = request.form.get("name")
+        if not form.validate_on_submit():
+            flash("Category action could not be verified. Please try again.", "error")
+            return redirect(url_for("admin.manage_categories"))
+
+        name = request.form.get("name", "").strip()
 
         if not name:
             flash("Category name required", "error")
+            return redirect(url_for("admin.manage_categories"))
+
+        existing_category = Category.query.filter(func.lower(Category.name) == name.lower()).first()
+        if existing_category:
+            flash("A category with this name already exists.", "error")
             return redirect(url_for("admin.manage_categories"))
 
         category = Category(name=name)
@@ -1228,11 +1274,16 @@ def manage_categories():
         return redirect(url_for("admin.manage_categories"))
 
     categories = Category.query.all()
-    return render_template("admin/categories.html", categories=categories)
+    return render_template("admin/categories.html", categories=categories, form=form, delete_form=DeleteForm())
 
 @admin_bp.route("/categories/<uuid:id>/delete", methods=["POST"])
 @login_required
 def delete_category(id):
+    form = DeleteForm()
+    if not form.validate_on_submit():
+        flash("Category delete action could not be verified. Please try again.", "error")
+        return redirect(url_for("admin.manage_categories"))
+
     category = Category.query.get_or_404(id)
 
     if category.posts:
@@ -1252,13 +1303,20 @@ def delete_category(id):
 @login_required
 def upload_image():
     """Upload an image from the Quill editor to Cloudinary."""
+    form = CsrfForm()
+    if not form.validate_on_submit():
+        return jsonify({"error": "Upload action could not be verified."}), 400
+
     file = request.files.get("image")
     if not file:
         return jsonify({"error": "No image provided"}), 400
 
     try:
+        validate_blog_image_file(file)
         url = upload_blog_image(file)
         return jsonify({"url": url})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
