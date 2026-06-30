@@ -53,14 +53,14 @@
         Current session: {{ open_attendance.duration_label }}.
       </p>
       <form method="POST" action="{{ url_for('employee.punch_out') }}" id="punchOutForm" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
-        {{ punch_form.hidden_tag() }}
+        {{ punch_out_form.hidden_tag() }}
         <button type="button" class="btn-danger" onclick="openPunchOutModal()">Punch Out</button>
 
         <div id="punchOutModal" class="modal-overlay">
           <div class="modal">
             <h3>Daily Summary</h3>
             <p>Describe what you worked on today before punching out:</p>
-            {{ punch_form.daily_summary(rows=6, placeholder="What did you work on today?") }}
+            {{ punch_out_form.daily_summary(rows=6, placeholder="What did you work on today?") }}
             <div class="modal-actions">
               <button type="button" class="btn-secondary" onclick="closePunchOutModal()">Cancel</button>
               <button type="submit" class="btn-danger">Submit &amp; Punch Out</button>
@@ -71,7 +71,7 @@
     {% else %}
       <p class="table-muted">You are currently offline.</p>
       <form method="POST" action="{{ url_for('employee.punch_in') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
-        {{ punch_form.hidden_tag() }}
+        {{ punch_in_form.hidden_tag() }}
         <button type="submit" class="btn-primary">Punch In</button>
       </form>
     {% endif %}

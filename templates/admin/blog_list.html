@@ -38,6 +38,7 @@
                 action="{{ url_for('admin.delete_blog', blog_id=blog.id) }}"
                 onsubmit="return confirm('Delete this blog?');"
                 style="display:inline;">
+            {{ delete_form.hidden_tag() }}
             <button type="submit" class="link-danger">Delete</button>
           </form>
         </td>

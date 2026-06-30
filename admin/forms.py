@@ -88,7 +88,11 @@ class AdminLoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
-class DeleteForm(FlaskForm):
+class CsrfForm(FlaskForm):
+    pass
+
+
+class DeleteForm(CsrfForm):
     pass
 
 

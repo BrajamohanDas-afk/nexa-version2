@@ -21,6 +21,7 @@ import re
 import uuid
 from datetime import datetime, timedelta
 from sqlalchemy.exc import ProgrammingError, OperationalError, SQLAlchemyError
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -52,6 +53,7 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH", str(10 * 1024 * 1024)))
 app.config["MAX_FORM_MEMORY_SIZE"] = int(os.getenv("MAX_FORM_MEMORY_SIZE", str(1024 * 1024)))
 app.config["MAX_FORM_PARTS"] = int(os.getenv("MAX_FORM_PARTS", "100"))
+ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
 
 trusted_hosts = os.getenv("TRUSTED_HOSTS", "").strip()
 if trusted_hosts:
@@ -120,7 +122,11 @@ app.register_blueprint(employee_bp)
 db.init_app(app)
 
 with app.app_context():
-    ensure_all_tables()
+    try:
+        ensure_all_tables()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        app.logger.warning("Database initialization skipped: %s", e)
 
 # with app.app_context():
 #     db.create_all()
@@ -465,6 +471,24 @@ def contact():
     return render_template("contact.html")
     
 
+def validate_resume_file(file):
+    file_name = secure_filename(file.filename or "")
+    extension = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+    if extension not in ALLOWED_RESUME_EXTENSIONS:
+        raise ValueError("Unsupported resume type.")
+
+    header = file.stream.read(16)
+    file.stream.seek(0)
+
+    valid_signatures = {
+        "pdf": header.startswith(b"%PDF-"),
+        "doc": header.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"),
+        "docx": header.startswith(b"PK\x03\x04"),
+    }
+    if not valid_signatures.get(extension, False):
+        raise ValueError("Uploaded resume content does not match the selected file type.")
+
+
 @app.route("/about")
 def about():
     return render_template("about.html")
@@ -503,7 +527,11 @@ def apply_for_job(slug):
         resume_url = None
         if form.resume.data:
             try:
+                validate_resume_file(form.resume.data)
                 resume_url = upload_resume(form.resume.data)
+            except ValueError as e:
+                flash(str(e), "error")
+                return render_template("career_detail.html", job=job, form=form)
             except Exception as e:
                 app.logger.error("Resume upload error: %s", e)
                 flash("There was a problem uploading your resume. Please try again.", "error")

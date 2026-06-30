@@ -15,7 +15,7 @@ from models import (
     format_duration,
     seconds_on_date,
 )
-from .forms import EmployeeLoginForm, LeaveRequestForm, PunchForm
+from .forms import EmployeeLoginForm, LeaveRequestForm, PunchInForm, PunchOutForm
 from security_utils import employee_ip_login_limiter, employee_login_limiter, login_ip_key, login_rate_key
 
 
@@ -187,7 +187,8 @@ def dashboard():
             .limit(3)
             .all()
         ),
-        punch_form=PunchForm(),
+        punch_in_form=PunchInForm(),
+        punch_out_form=PunchOutForm(),
     )
 
 
@@ -259,7 +260,7 @@ def create_leave_request():
 @employee_login_required
 def punch_in():
     employee = current_user.employee
-    form = PunchForm()
+    form = PunchInForm()
 
     if not form.validate_on_submit():
         flash("Attendance action could not be verified. Please try again.", "error")
@@ -285,7 +286,7 @@ def punch_in():
 @employee_bp.route("/attendance/punch-out", methods=["POST"])
 @employee_login_required
 def punch_out():
-    form = PunchForm()
+    form = PunchOutForm()
 
     if not form.validate_on_submit():
         flash("Please provide your daily summary before punching out.", "error")

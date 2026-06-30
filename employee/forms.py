@@ -11,7 +11,11 @@ class EmployeeLoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
-class PunchForm(FlaskForm):
+class PunchInForm(FlaskForm):
+    pass
+
+
+class PunchOutForm(FlaskForm):
     daily_summary = TextAreaField("Daily Summary", validators=[DataRequired(), Length(min=10, max=2000)])
 
 
