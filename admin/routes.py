@@ -449,6 +449,56 @@ def attendance_reports():
     )
 
 
+@admin_bp.route("/attendance/daily-reports")
+@login_required
+def daily_reports():
+    employees = Employee.query.order_by(Employee.full_name.asc()).all()
+    employee_id = request.args.get("employee_id", type=int)
+    date_from_raw = request.args.get("date_from", "").strip()
+    date_to_raw = request.args.get("date_to", "").strip()
+
+    query = (
+        AttendanceRecord.query
+        .options(joinedload(AttendanceRecord.employee))
+        .join(Employee)
+        .filter(AttendanceRecord.daily_summary.isnot(None))
+        .filter(AttendanceRecord.daily_summary != "")
+    )
+
+    if employee_id:
+        query = query.filter(AttendanceRecord.employee_id == employee_id)
+
+    date_from = parse_filter_date(date_from_raw, "from")
+    if date_from:
+        query = query.filter(AttendanceRecord.attendance_date >= date_from)
+
+    date_to = parse_filter_date(date_to_raw, "to")
+    if date_to:
+        query = query.filter(AttendanceRecord.attendance_date <= date_to)
+
+    if date_from and date_to and date_from > date_to:
+        flash("The from date cannot be after the to date.", "error")
+        records_result = []
+        pagination = None
+    else:
+        page = request.args.get("page", 1, type=int)
+        pagination = query.order_by(
+            AttendanceRecord.attendance_date.desc(),
+            AttendanceRecord.check_in_at.desc(),
+        ).paginate(page=page, per_page=ATTENDANCE_REPORTS_PER_PAGE, error_out=False)
+        records_result = pagination.items
+
+    return render_template(
+        "admin/daily_reports.html",
+        employees=employees,
+        records_result=records_result,
+        pagination=pagination,
+        selected_employee_id=employee_id,
+        date_from=date_from_raw,
+        date_to=date_to_raw,
+    )
+
+
 def parse_filter_date(value, label):
     if not value:
         return None

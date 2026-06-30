@@ -28,14 +28,14 @@
               <div class="table-muted">{{ row.employee.role or "No role" }}</div>
             </td>
             <td>
-              {% if record and record.is_open %}
+              {% if record and record.status == 'checked_in' and record.check_out_at is none %}
                 <span class="badge published">Online</span>
               {% else %}
                 <span class="badge draft">Offline</span>
               {% endif %}
             </td>
             <td>{{ record.check_in_at.strftime("%d %b %Y, %H:%M") if record else "No record" }}</td>
-            <td>{{ record.check_out_at.strftime("%d %b %Y, %H:%M") if record and record.check_out_at else "Active" if record and record.is_open else "No record" }}</td>
+            <td>{{ record.check_out_at.strftime("%d %b %Y, %H:%M") if record and record.check_out_at else "Active" if record and record.status == 'checked_in' and record.check_out_at is none else "No record" }}</td>
             <td>{{ row.today_total }}</td>
             <td>
               <a href="{{ url_for('admin.attendance_reports', employee_id=row.employee.id) }}">View report</a>

@@ -52,9 +52,21 @@
         Punched in at {{ open_attendance.check_in_at.strftime("%d %b %Y, %H:%M") }}.
         Current session: {{ open_attendance.duration_label }}.
       </p>
-      <form method="POST" action="{{ url_for('employee.punch_out') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+      <form method="POST" action="{{ url_for('employee.punch_out') }}" id="punchOutForm" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
         {{ punch_form.hidden_tag() }}
-        <button type="submit" class="btn-danger">Punch Out</button>
+        <button type="button" class="btn-danger" onclick="openPunchOutModal()">Punch Out</button>
+
+        <div id="punchOutModal" class="modal-overlay">
+          <div class="modal">
+            <h3>Daily Summary</h3>
+            <p>Describe what you worked on today before punching out:</p>
+            {{ punch_form.daily_summary(rows=6, placeholder="What did you work on today?") }}
+            <div class="modal-actions">
+              <button type="button" class="btn-secondary" onclick="closePunchOutModal()">Cancel</button>
+              <button type="submit" class="btn-danger">Submit &amp; Punch Out</button>
+            </div>
+          </div>
+        </div>
       </form>
     {% else %}
       <p class="table-muted">You are currently offline.</p>
@@ -174,4 +186,29 @@
     {% endif %}
   </div>
 </div>
+
+<style>
+.modal-overlay {
+  display: none; position: fixed; z-index: 9999;
+  inset: 0; background: rgba(0,0,0,0.45);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: #fff; border-radius: 14px; padding: 2rem;
+  max-width: 520px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal h3 { margin: 0 0 0.3rem; font-size: 1.2rem; }
+.modal p { color: var(--text-muted); margin: 0 0 1rem; }
+.modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.2rem; }
+</style>
+
+<script>
+function openPunchOutModal() {
+  document.getElementById('punchOutModal').classList.add('active');
+}
+function closePunchOutModal() {
+  document.getElementById('punchOutModal').classList.remove('active');
+}
+</script>
 {% endblock %}
