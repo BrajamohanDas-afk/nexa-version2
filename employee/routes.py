@@ -288,7 +288,7 @@ def punch_out():
     form = PunchForm()
 
     if not form.validate_on_submit():
-        flash("Attendance action could not be verified. Please try again.", "error")
+        flash("Please provide your daily summary before punching out.", "error")
         return redirect(url_for("employee.dashboard"))
 
     record = get_open_attendance(current_user.employee.id)
@@ -297,6 +297,7 @@ def punch_out():
         flash("No active punch in found.", "warning")
         return redirect(url_for("employee.dashboard"))
 
+    record.daily_summary = form.daily_summary.data.strip()
     record.close()
     db.session.commit()
     flash("Punch out recorded.", "success")

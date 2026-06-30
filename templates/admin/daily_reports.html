@@ -1,0 +1,91 @@
+{% extends "layouts/base_admin.html" %}
+
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Daily Reports</h1>
+    <a href="{{ url_for('admin.attendance_overview') }}" class="btn-secondary">Attendance Overview</a>
+  </div>
+
+  <form method="GET" class="filter-form">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="employee_id">Employee</label>
+        <select id="employee_id" name="employee_id">
+          <option value="">All employees</option>
+          {% for employee in employees %}
+            <option value="{{ employee.id }}" {% if selected_employee_id == employee.id %}selected{% endif %}>
+              {{ employee.full_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="date_from">From</label>
+        <input id="date_from" type="date" name="date_from" value="{{ date_from }}">
+      </div>
+      <div class="form-group">
+        <label for="date_to">To</label>
+        <input id="date_to" type="date" name="date_to" value="{{ date_to }}">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Apply</button>
+        <a href="{{ url_for('admin.daily_reports') }}" class="btn-secondary">Reset</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="admin-section">
+    <div class="admin-header">
+      <h2>Employee Summaries</h2>
+    </div>
+
+    {% if records_result %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Total</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records_result %}
+            <tr>
+              <td>
+                {{ record.employee.full_name }}
+                <div class="table-muted">{{ record.employee.department or "No department" }}</div>
+              </td>
+              <td>{{ record.attendance_date.strftime("%d %b %Y") }}</td>
+              <td>{{ record.check_in_at.strftime("%H:%M") }}</td>
+              <td>{{ record.check_out_at.strftime("%H:%M") if record.check_out_at else "Active" }}</td>
+              <td>{{ record.duration_label }}</td>
+              <td style="max-width: 300px;">{{ record.daily_summary }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if pagination.pages > 1 %}
+        <div class="dashboard-actions" style="justify-content: center; margin-top: 1rem;">
+          {% if pagination.has_prev %}
+            <a class="btn-secondary" href="{{ url_for('admin.daily_reports', employee_id=selected_employee_id, date_from=date_from, date_to=date_to, page=pagination.prev_num) }}">Previous</a>
+          {% endif %}
+          <span class="table-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+          {% if pagination.has_next %}
+            <a class="btn-secondary" href="{{ url_for('admin.daily_reports', employee_id=selected_employee_id, date_from=date_from, date_to=date_to, page=pagination.next_num) }}">Next</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <p style="color: var(--text-muted); margin-top: 1rem;">
+        No daily reports found.
+        <a href="{{ url_for('admin.daily_reports') }}">Reset filters</a>.
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

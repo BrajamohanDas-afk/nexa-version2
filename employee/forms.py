@@ -12,7 +12,7 @@ class EmployeeLoginForm(FlaskForm):
 
 
 class PunchForm(FlaskForm):
-    pass
+    daily_summary = TextAreaField("Daily Summary", validators=[DataRequired(), Length(min=10, max=2000)])
 
 
 class LeaveRequestForm(FlaskForm):

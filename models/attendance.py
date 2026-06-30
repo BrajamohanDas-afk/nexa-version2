@@ -16,6 +16,7 @@ class AttendanceRecord(db.Model):
     check_out_at = Column(DateTime)
     total_seconds = Column(Integer, nullable=False, default=0)
     status = Column(String(30), nullable=False, default="checked_in", index=True)
+    daily_summary = Column(String(2000), nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
@@ -88,6 +89,7 @@ def ensure_attendance_tables():
         "check_out_at": "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS check_out_at TIMESTAMP",
         "total_seconds": "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS total_seconds INTEGER NOT NULL DEFAULT 0",
         "status": "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'checked_in'",
+        "daily_summary": "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS daily_summary VARCHAR(2000)",
         "created_at": "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
         "updated_at": "ALTER TABLE attendance_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
     }
